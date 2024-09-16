@@ -1,49 +1,57 @@
 import 'package:flutter/material.dart';
-import 'register.dart'; // Import หน้า RegisterPage
+import 'register.dart';
 
-class LoginPage extends StatelessWidget {
+
+class LoginPage extends StatefulWidget {
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+  bool _obscureText = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.greenAccent.shade100, Colors.greenAccent.shade200],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
+            colors: [Colors.greenAccent, Colors.white],
           ),
         ),
         child: Center(
-          child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/logo.png', // เพิ่มโลโก้ของคุณในโฟลเดอร์ assets
-                  height: 100,
-                ),
-                Text(
-                  'RICEGUARD',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
-                  ),
-                ),
-                Text(
-                  'FARMER HELPER APP',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.green.shade800,
-                  ),
+              children: <Widget>[
+                // Logo and app name
+                Column(
+                  children: [
+                    Image.asset(
+                      'assets/images/logo.png', // Your app logo path
+                      height: 80,
+                    ),
+                    Text(
+                      "RICEGUARD",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 20),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-                  margin: EdgeInsets.symmetric(horizontal: 30),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.withOpacity(0.5),
@@ -57,34 +65,38 @@ class LoginPage extends StatelessWidget {
                     children: [
                       Text(
                         'Welcome',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                        ),
-                      ),
-                      Text(
-                        'Login to your account',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.orange,
-                        ),
+                        style: TextStyle(fontSize: 24, color: Colors.orange),
+                        textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 20),
                       TextField(
+                        controller: _emailController,
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(),
                           labelText: 'Email',
-                          suffixIcon: Icon(Icons.clear),
+                          border: OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              _emailController.clear();
+                            },
+                          ),
                         ),
                       ),
-                      SizedBox(height: 20),
+                      SizedBox(height: 10),
                       TextField(
-                        obscureText: true,
+                        controller: _passwordController,
+                        obscureText: _obscureText,
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(),
                           labelText: 'Password',
-                          suffixIcon: Icon(Icons.visibility),
+                          border: OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+                            onPressed: () {
+                              setState(() {
+                                _obscureText = !_obscureText;
+                              });
+                            },
+                          ),
                         ),
                       ),
                       SizedBox(height: 20),
@@ -92,26 +104,22 @@ class LoginPage extends StatelessWidget {
                         onPressed: () {
                           // Handle login logic here
                         },
+                        child: Text('Login'),
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.green,
-                          padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        ),
-                        child: Text(
-                          'Login',
-                          style: TextStyle(fontSize: 18),
+                          primary: Colors.green, // Button color
                         ),
                       ),
-                      SizedBox(height: 20),
-                      TextButton(
-                        onPressed: () {
+                      SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => RegisterPage()),
                           );
                         },
                         child: Text(
-                          'If you do not have an account, please Register.',
-                          style: TextStyle(color: Colors.orange),
+                          "If you do not have an account, please Register.",
+                          style: TextStyle(color: Colors.blue),
                         ),
                       ),
                     ],
