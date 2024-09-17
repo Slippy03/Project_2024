@@ -26,6 +26,35 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text.isNotEmpty &&
         _nameController.text.isNotEmpty &&
         _emailController.text.isNotEmpty) { 
+      // Show confirmation dialog
+      bool? confirm = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Confirm Registration'),
+            content: Text('กรุณาตรวจสอบข้อมูลอย่างถี่ถ้วน หากเรียบร้อยแล้วโปรดกดยืนยัน'),
+            actions: <Widget>[
+              TextButton(
+                child: Text('ยกเลิก'),
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+              ),
+              TextButton(
+                child: Text('ยืนยัน'),
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirm != true) {
+        return; // User canceled registration
+      }
+
       try {
         QuerySnapshot usernameQuery = await FirebaseFirestore.instance
             .collection('users')
@@ -34,7 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (usernameQuery.docs.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Username is already taken, please choose another one.")),
+            SnackBar(content: Text("มีชื่อผู้ใช้นี้ในระบบแล้ว")),
           );
           return;
         }
@@ -55,7 +84,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("User registered successfully!"),
+            content: Text("ละทะเบียนสำเร็จ!"),
           ),
         );
 
@@ -69,12 +98,12 @@ class _RegisterPageState extends State<RegisterPage> {
           _errorMessage = e.toString();
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to register user: $_errorMessage")),
+          SnackBar(content: Text("ลงทะเบียนไม่สำเร็จ: $_errorMessage")),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please fill all required fields!")),
+        SnackBar(content: Text("กรุณากรอกข้อมูลให้ครบถ้วน!")),
       );
     }
   }
