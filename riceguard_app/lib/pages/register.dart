@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'login.dart'; // Import LoginPage
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -11,39 +13,62 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController _passwordController = TextEditingController();
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
+  TextEditingController _phoneController = TextEditingController(); // Controller for phone number
 
   bool _obscureTextPassword = true;
-  String? _farmerExperience; // For radio button selection
+  String? _farmerExperience;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Function to add user data to Firestore
+  String? _errorMessage;
+
+  // Function to register user with Firebase Auth and Firestore
   Future<void> _registerUser() async {
-    // Validate if the required fields are not empty
     if (_usernameController.text.isNotEmpty &&
         _passwordController.text.isNotEmpty &&
-        _nameController.text.isNotEmpty) {
+        _nameController.text.isNotEmpty &&
+        _emailController.text.isNotEmpty &&
+        _phoneController.text.isNotEmpty) { // Added phone number validation
       try {
-        // Add user data to Firestore
-        await FirebaseFirestore.instance.collection('users').add({
-          'username': _usernameController.text,
-          'password': _passwordController.text,
-          'name': _nameController.text,
-          'email': _emailController.text.isEmpty ? null : _emailController.text, // Optional field
+        // Create user with email and password using Firebase Authentication
+        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+
+        // Add additional user data to Firestore
+        await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
+          'username': _usernameController.text.trim(),
+          'name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'phone': _phoneController.text.trim(), // Store phone number
           'farmer_experience': _farmerExperience,
-          'created_at': FieldValue.serverTimestamp(), // To store the timestamp
+          'created_at': FieldValue.serverTimestamp(),
         });
 
         // Show a success message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("User registered successfully!"),),
+          SnackBar(
+            content: Text("User registered successfully!"),
+          ),
         );
+
+        // Navigate to LoginPage after successful registration
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()), // Navigate to LoginPage
+        );
+        
       } catch (e) {
-        // Handle errors
+        // Handle registration errors
+        setState(() {
+          _errorMessage = e.toString();
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to register user: $e")),
+          SnackBar(content: Text("Failed to register user: $_errorMessage")),
         );
       }
     } else {
-      // Show an error message if fields are empty
+      // Show error message if fields are missing
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Please fill all required fields!")),
       );
@@ -58,7 +83,7 @@ class _RegisterPageState extends State<RegisterPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.greenAccent, Colors.white],
+            colors: [Color.fromARGB(255, 134, 255, 123), Colors.white],
           ),
         ),
         child: Center(
@@ -158,11 +183,20 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        // Email (Optional)
+                        // Phone Number
+                        TextField(
+                          controller: _phoneController,
+                          decoration: InputDecoration(
+                            labelText: 'Phone Number',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        // Email
                         TextField(
                           controller: _emailController,
                           decoration: InputDecoration(
-                            labelText: 'Email (Optional)',
+                            labelText: 'Email',
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -221,9 +255,17 @@ class _RegisterPageState extends State<RegisterPage> {
                           style: ElevatedButton.styleFrom(
                             primary: Colors.green, // Button color
                             padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                            
                           ),
                         ),
+                        SizedBox(height: 10),
+                        if (_errorMessage != null) // Show error message if any
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
                       ],
                     ),
                   ),

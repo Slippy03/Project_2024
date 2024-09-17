@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home.dart'; // Import the HomePage
 import 'register.dart';
-
 
 class LoginPage extends StatefulWidget {
   @override
@@ -8,9 +10,66 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  TextEditingController _emailController = TextEditingController();
+  TextEditingController _usernameController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
+
+  // Function to determine if a string is an email
+  bool _isEmail(String input) {
+    return RegExp(r"^[\w-]+@([\w-]+\.)+[a-zA-Z]{2,}$").hasMatch(input);
+  }
+
+  // Function to log in user
+  Future<void> _loginUser() async {
+    String input = _usernameController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (input.isNotEmpty && password.isNotEmpty) {
+      try {
+        String email;
+
+        if (_isEmail(input)) {
+          // If input is an email, use it directly
+          email = input;
+        } else {
+          // If input is a username, fetch email associated with it
+          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .where('username', isEqualTo: input)
+              .get();
+
+          if (querySnapshot.docs.isNotEmpty) {
+            email = querySnapshot.docs[0]['email'];
+          } else {
+            // Username not found
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Username not found")),
+            );
+            return;
+          }
+        }
+
+        // Sign in with the obtained email and password
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: password);
+
+        // If login is successful, navigate to HomePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+      } catch (e) {
+        // Handle errors (e.g., wrong password, network issue)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Login failed: $e")),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter both username and password")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.greenAccent, Colors.white],
+            colors: [Color.fromARGB(255, 134, 255, 123), Colors.white],
           ),
         ),
         child: Center(
@@ -70,14 +129,14 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       SizedBox(height: 20),
                       TextField(
-                        controller: _emailController,
+                        controller: _usernameController,
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: 'Username/Email',
                           border: OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(Icons.clear),
                             onPressed: () {
-                              _emailController.clear();
+                              _usernameController.clear();
                             },
                           ),
                         ),
@@ -101,9 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {
-                          // Handle login logic here
-                        },
+                        onPressed: _loginUser, // Call login function
                         child: Text('Login'),
                         style: ElevatedButton.styleFrom(
                           primary: Colors.green, // Button color
