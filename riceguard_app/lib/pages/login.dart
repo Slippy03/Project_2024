@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
             email = querySnapshot.docs[0]['email'];
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Username not found")),
+              SnackBar(content: Text("ไม่พบชื่อผู้ใช้ในระบบ")),
             );
             return;
           }
@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter both username and password")),
+        SnackBar(content: Text("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน")),
       );
     }
   }
