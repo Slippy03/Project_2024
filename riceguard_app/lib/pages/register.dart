@@ -13,7 +13,7 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController _passwordController = TextEditingController();
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
-  TextEditingController _phoneController = TextEditingController(); // Controller for phone number
+  TextEditingController _phoneController = TextEditingController(); // Controller for phone number (optional)
 
   bool _obscureTextPassword = true;
   String? _farmerExperience;
@@ -26,10 +26,23 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_usernameController.text.isNotEmpty &&
         _passwordController.text.isNotEmpty &&
         _nameController.text.isNotEmpty &&
-        _emailController.text.isNotEmpty &&
-        _phoneController.text.isNotEmpty) { // Added phone number validation
+        _emailController.text.isNotEmpty) { // No need for phone number validation since it's optional
       try {
-        // Create user with email and password using Firebase Authentication
+        // Step 1: Check if the username already exists in Firestore
+        QuerySnapshot usernameQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isEqualTo: _usernameController.text.trim())
+            .get();
+
+        if (usernameQuery.docs.isNotEmpty) {
+          // Username already exists, show an error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Username is already taken, please choose another one.")),
+          );
+          return; // Stop the registration process
+        }
+
+        // Step 2: If username doesn't exist, proceed with registration
         UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -40,7 +53,7 @@ class _RegisterPageState extends State<RegisterPage> {
           'username': _usernameController.text.trim(),
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(), // Store phone number
+          'phone': _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null, // Store phone number if not empty
           'farmer_experience': _farmerExperience,
           'created_at': FieldValue.serverTimestamp(),
         });
@@ -183,11 +196,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        // Phone Number
+                        // Phone Number (optional)
                         TextField(
                           controller: _phoneController,
                           decoration: InputDecoration(
-                            labelText: 'Phone Number',
+                            labelText: 'Phone Number (optional)',
                             border: OutlineInputBorder(),
                           ),
                         ),
