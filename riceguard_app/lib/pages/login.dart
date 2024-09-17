@@ -18,7 +18,6 @@ class _LoginPageState extends State<LoginPage> {
     return RegExp(r"^[\w-]+@([\w-]+\.)+[a-zA-Z]{2,}$").hasMatch(input);
   }
 
-  // Function to log in user
   Future<void> _loginUser() async {
     String input = _usernameController.text.trim();
     String password = _passwordController.text.trim();
@@ -84,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
                 Column(
                   children: [
                     Image.asset(
-                      'assets/images/farmer.png', // Your app logo path
+                      'assets/images/farmer.png', 
                       height: 100,
                     ),
                     Text(
@@ -92,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 92, 255, 108),
+                        color: Colors.green,
                       ),
                     ),
                   ],

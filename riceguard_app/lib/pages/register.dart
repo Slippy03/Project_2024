@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart'; 
 import 'login.dart'; 
+
 class RegisterPage extends StatefulWidget {
   @override
   _RegisterPageState createState() => _RegisterPageState();
@@ -35,7 +36,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Username is already taken, please choose another one.")),
           );
-          return; 
+          return;
         }
 
         UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
@@ -47,7 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
           'username': _usernameController.text.trim(),
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+          'phone': _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null, 
           'farmer_experience': _farmerExperience,
           'created_at': FieldValue.serverTimestamp(),
         });
@@ -81,6 +82,18 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 134, 255, 123),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Color.fromARGB(255, 255, 255, 255)), 
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => LoginPage()), 
+            );
+          },
+        ),
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -138,10 +151,13 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          'Register your account',
-                          style: TextStyle(fontSize: 24, color: Colors.orange),
-                          textAlign: TextAlign.center,
+                        Align(
+                          alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Register your account',
+                              style: TextStyle(fontSize: 24, color: Colors.orange),
+                              textAlign: TextAlign.center,
+                            ),
                         ),
                         SizedBox(height: 20),
                         // Username
@@ -251,12 +267,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           ],
                         ),
                         SizedBox(height: 20),
-                        // Register Button
                         ElevatedButton(
                           onPressed: _registerUser,
                           child: Text('Register'),
                           style: ElevatedButton.styleFrom(
-                            primary: Colors.green, // Button color
+                            primary: Colors.green, 
                             padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                             foregroundColor: Colors.white                         
 
