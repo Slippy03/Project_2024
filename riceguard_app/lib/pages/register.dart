@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
-import 'login.dart'; // Import LoginPage
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login.dart'; 
 class RegisterPage extends StatefulWidget {
   @override
   _RegisterPageState createState() => _RegisterPageState();
@@ -13,7 +12,7 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController _passwordController = TextEditingController();
   TextEditingController _nameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
-  TextEditingController _phoneController = TextEditingController(); // Controller for phone number (optional)
+  TextEditingController _phoneController = TextEditingController(); 
 
   bool _obscureTextPassword = true;
   String? _farmerExperience;
@@ -21,58 +20,50 @@ class _RegisterPageState extends State<RegisterPage> {
 
   String? _errorMessage;
 
-  // Function to register user with Firebase Auth and Firestore
   Future<void> _registerUser() async {
     if (_usernameController.text.isNotEmpty &&
         _passwordController.text.isNotEmpty &&
         _nameController.text.isNotEmpty &&
-        _emailController.text.isNotEmpty) { // No need for phone number validation since it's optional
+        _emailController.text.isNotEmpty) { 
       try {
-        // Step 1: Check if the username already exists in Firestore
         QuerySnapshot usernameQuery = await FirebaseFirestore.instance
             .collection('users')
             .where('username', isEqualTo: _usernameController.text.trim())
             .get();
 
         if (usernameQuery.docs.isNotEmpty) {
-          // Username already exists, show an error message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Username is already taken, please choose another one.")),
           );
-          return; // Stop the registration process
+          return; 
         }
 
-        // Step 2: If username doesn't exist, proceed with registration
         UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-        // Add additional user data to Firestore
         await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
           'username': _usernameController.text.trim(),
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null, // Store phone number if not empty
+          'phone': _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
           'farmer_experience': _farmerExperience,
           'created_at': FieldValue.serverTimestamp(),
         });
 
-        // Show a success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("User registered successfully!"),
           ),
         );
 
-        // Navigate to LoginPage after successful registration
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => LoginPage()), // Navigate to LoginPage
+          MaterialPageRoute(builder: (context) => LoginPage()), 
         );
         
       } catch (e) {
-        // Handle registration errors
         setState(() {
           _errorMessage = e.toString();
         });
@@ -81,7 +72,6 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     } else {
-      // Show error message if fields are missing
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Please fill all required fields!")),
       );
@@ -110,8 +100,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   Column(
                     children: [
                       Image.asset(
-                        'assets/logo.png', // Your app logo path
-                        height: 80,
+                        'assets/images/farmer.png', 
+                        height: 100,
                       ),
                       Text(
                         "RICEGUARD",
@@ -268,10 +258,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           style: ElevatedButton.styleFrom(
                             primary: Colors.green, // Button color
                             padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                            foregroundColor: Colors.white                         
+
                           ),
                         ),
                         SizedBox(height: 10),
-                        if (_errorMessage != null) // Show error message if any
+                        if (_errorMessage != null) 
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(

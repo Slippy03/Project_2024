@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'home.dart'; // Import the HomePage
+import 'home.dart';
 import 'register.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,7 +14,6 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
 
-  // Function to determine if a string is an email
   bool _isEmail(String input) {
     return RegExp(r"^[\w-]+@([\w-]+\.)+[a-zA-Z]{2,}$").hasMatch(input);
   }
@@ -29,10 +28,8 @@ class _LoginPageState extends State<LoginPage> {
         String email;
 
         if (_isEmail(input)) {
-          // If input is an email, use it directly
           email = input;
         } else {
-          // If input is a username, fetch email associated with it
           QuerySnapshot querySnapshot = await FirebaseFirestore.instance
               .collection('users')
               .where('username', isEqualTo: input)
@@ -41,7 +38,6 @@ class _LoginPageState extends State<LoginPage> {
           if (querySnapshot.docs.isNotEmpty) {
             email = querySnapshot.docs[0]['email'];
           } else {
-            // Username not found
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text("Username not found")),
             );
@@ -49,17 +45,14 @@ class _LoginPageState extends State<LoginPage> {
           }
         }
 
-        // Sign in with the obtained email and password
         UserCredential userCredential = await FirebaseAuth.instance
             .signInWithEmailAndPassword(email: email, password: password);
 
-        // If login is successful, navigate to HomePage
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
         );
       } catch (e) {
-        // Handle errors (e.g., wrong password, network issue)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Login failed: $e")),
         );
@@ -88,19 +81,18 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                // Logo and app name
                 Column(
                   children: [
                     Image.asset(
-                      'assets/images/logo.png', // Your app logo path
-                      height: 80,
+                      'assets/images/farmer.png', // Your app logo path
+                      height: 100,
                     ),
                     Text(
                       "RICEGUARD",
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: Color.fromARGB(255, 92, 255, 108),
                       ),
                     ),
                   ],
@@ -149,7 +141,9 @@ class _LoginPageState extends State<LoginPage> {
                           labelText: 'Password',
                           border: OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+                            icon: Icon(_obscureText
+                                ? Icons.visibility
+                                : Icons.visibility_off),
                             onPressed: () {
                               setState(() {
                                 _obscureText = !_obscureText;
@@ -160,10 +154,11 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: _loginUser, // Call login function
+                        onPressed: _loginUser,
                         child: Text('Login'),
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.green, // Button color
+                          primary: Colors.green,
+                          foregroundColor: Colors.white                         
                         ),
                       ),
                       SizedBox(height: 10),
@@ -171,12 +166,25 @@ class _LoginPageState extends State<LoginPage> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => RegisterPage()),
+                            MaterialPageRoute(
+                                builder: (context) => RegisterPage()),
                           );
                         },
-                        child: Text(
-                          "If you do not have an account, please Register.",
-                          style: TextStyle(color: Colors.blue),
+                        child: RichText(
+                          text: TextSpan(
+                            text:
+                                "If you do not have an account, please ",
+                            style: TextStyle(color: Colors.black),
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: 'Register',
+                                style: TextStyle(color: Colors.blue),
+                              ),
+                              TextSpan(
+                                text: '.',
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
