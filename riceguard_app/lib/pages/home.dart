@@ -7,7 +7,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;  // ตำแหน่งของแท็บปัจจุบัน
+  int _selectedIndex = 0;  
 
   void _onItemTapped(int index) {
     setState(() {
@@ -35,7 +35,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('RiceGuard'),
-        backgroundColor: Color.fromRGBO(134, 245, 137, 1),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -57,7 +58,7 @@ class _HomePageState extends State<HomePage> {
               'ระบบ Forum สำหรับแลกเปลี่ยนข้อมูล',
               'assets/images/mail-box.png',
               () {
-                // ไปที่หน้า forum
+                Navigator.of(context).pushNamed('/forum'); // Navigate to ForumPage
               },
             ),
             _buildMenuItem(
