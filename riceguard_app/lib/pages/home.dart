@@ -1,125 +1,140 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; 
-import 'login.dart'; 
+import 'navbar.dart';  
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;  // ตำแหน่งของแท็บปัจจุบัน
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.of(context).pushReplacementNamed('/home');
+        break;
+      case 1:
+        Navigator.of(context).pushReplacementNamed('/forum');
+        break;
+      case 2:
+        Navigator.of(context).pushReplacementNamed('/camera');
+        break;
+      case 3:
+        Navigator.of(context).pushReplacementNamed('/profile');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green[100],
       appBar: AppBar(
-        backgroundColor: Colors.green,
         title: Text('RiceGuard'),
-        centerTitle: true,
+        backgroundColor: Color.fromRGBO(134, 245, 137, 1),
       ),
-      body: Column(
-        children: [
-          SizedBox(height: 20),
-          Text(
-            'HELLO !\nWelcome To RiceGuard',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 20),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16.0,
-                  crossAxisSpacing: 16.0,
-                ),
-                itemBuilder: (context, index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.0),
-                    ),
-                  );
-                },
-                itemCount: 6, // Number of boxes
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.green[100],
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.forum),
-            label: 'Forum',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera),
-            label: 'Camera',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.logout),
-            label: 'Logout',
-          ),
-        ],
-        onTap: (index) {
-          if (index == 4) {
-            _showLogoutPrompt(context); 
-          }
-        },
-      ),
-    );
-  }
-
-  // Function to show logout confirmation prompt
-  void _showLogoutPrompt(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Logout'),
-          content: Text('Are you sure you want to log out?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); 
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16.0,
+          mainAxisSpacing: 16.0,
+          children: [
+            _buildMenuItem(
+              context,
+              'ตรวจสอบโรคของข้าวด้วยกล้อง',
+              'assets/images/camera.png',
+              () {
+                // ไปที่หน้ากล้อง
               },
-              child: Text('Cancel'),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); 
-                _logout(context); 
+            _buildMenuItem(
+              context,
+              'ระบบ Forum สำหรับแลกเปลี่ยนข้อมูล',
+              'assets/images/mail-box.png',
+              () {
+                // ไปที่หน้า forum
               },
-              child: Text('Logout'),
+            ),
+            _buildMenuItem(
+              context,
+              'วิธีการรักษาโรคของข้าว',
+              'assets/images/cure.png',
+              () {
+                // ไปที่หน้าการรักษาโรค
+              },
+            ),
+            _buildMenuItem(
+              context,
+              '5 โรคที่พบบ่อยในข้าว',
+              'assets/images/virus.png',
+              () {
+                // ไปที่หน้าโรคที่พบบ่อย
+              },
+            ),
+            _buildMenuItem(
+              context,
+              'สำรวจบริเวณที่เกิดโรค',
+              'assets/images/maps.png',
+              () {
+                // ไปที่หน้าสำรวจ
+              },
+            ),
+            _buildMenuItem(
+              context,
+              'การตั้งค่า / Settings',
+              'assets/images/settings.png',
+              () {
+                // ไปที่หน้าการตั้งค่า
+              },
             ),
           ],
-        );
-      },
+        ),
+      ),
+      bottomNavigationBar: MyBottomNavBar(
+        currentIndex: _selectedIndex, 
+        onTap: _onItemTapped, 
+      ),
     );
   }
 
-  void _logout(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut(); 
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginPage()), 
-      );
-    } catch (e) {
-      print('Error logging out: $e');
-    }
+  Widget _buildMenuItem(
+      BuildContext context, String title, String iconPath, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(iconPath, height: 60, width: 60),
+            SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
