@@ -36,12 +36,54 @@ class MyBottomNavBar extends StatelessWidget {
       selectedItemColor: Colors.green,
       unselectedItemColor: Colors.grey,
       onTap: (index) {
-        if (index == 4) {
-          FirebaseAuth.instance.signOut();
-          Navigator.of(context).pushReplacementNamed('/login');
+        if (index == 4) {  // Logout
+          _showLogoutDialog(context);
         } else {
-          onTap(index);  
+          // ทำการนำทางไปยังหน้าอื่นๆ ตาม index
+          switch (index) {
+            case 0: // Home
+              Navigator.of(context).pushReplacementNamed('/home');
+              break;
+            case 1: // Forum
+              Navigator.of(context).pushReplacementNamed('/forum');
+              break;
+            case 2: // Camera
+              // เพิ่มเส้นทางไปยังหน้า camera ถ้าคุณมี
+              break;
+            case 3: // Profile
+              // เพิ่มเส้นทางไปยังหน้า profile ถ้าคุณมี
+              break;
+          }
+          onTap(index);  // เรียกฟังก์ชัน onTap จากภายนอกถ้ามีการจัดการเพิ่มเติม
         }
+      },
+    );
+  }
+
+  // ฟังก์ชันแสดงหน้าต่างยืนยันการออกจากระบบ
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Logout'),
+          content: Text('ต้องการออกจากระบบใช่หรือไม่?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('ไม่'),
+              onPressed: () {
+                Navigator.of(context).pop();  // ปิด dialog
+              },
+            ),
+            TextButton(
+              child: Text('ใช่'),
+              onPressed: () {
+                FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacementNamed('/login');  // นำทางไปหน้า login หลังจากออกจากระบบ
+              },
+            ),
+          ],
+        );
       },
     );
   }
