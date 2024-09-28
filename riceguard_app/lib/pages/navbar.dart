@@ -10,7 +10,7 @@ class MyBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: currentIndex,  // กำหนดแท็บปัจจุบันที่ถูกเลือก
+      currentIndex: currentIndex, 
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
@@ -36,31 +36,31 @@ class MyBottomNavBar extends StatelessWidget {
       selectedItemColor: Colors.green,
       unselectedItemColor: Colors.grey,
       onTap: (index) {
-        if (index == 4) {  // Logout
+        if (index == 4) {  
           _showLogoutDialog(context);
         } else {
-          // ทำการนำทางไปยังหน้าอื่นๆ ตาม index
+          
           switch (index) {
-            case 0: // Home
+            case 0: 
               Navigator.of(context).pushReplacementNamed('/home');
               break;
-            case 1: // Forum
+            case 1: 
               Navigator.of(context).pushReplacementNamed('/forum');
               break;
-            case 2: // Camera
-              // เพิ่มเส้นทางไปยังหน้า camera ถ้าคุณมี
+            case 2: 
+           
               break;
-            case 3: // Profile
-              // เพิ่มเส้นทางไปยังหน้า profile ถ้าคุณมี
+            case 3: 
+              Navigator.of(context).pushReplacementNamed('/profile');
               break;
           }
-          onTap(index);  // เรียกฟังก์ชัน onTap จากภายนอกถ้ามีการจัดการเพิ่มเติม
+          onTap(index);  
         }
       },
     );
   }
 
-  // ฟังก์ชันแสดงหน้าต่างยืนยันการออกจากระบบ
+ 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -72,14 +72,14 @@ class MyBottomNavBar extends StatelessWidget {
             TextButton(
               child: Text('ไม่'),
               onPressed: () {
-                Navigator.of(context).pop();  // ปิด dialog
+                Navigator.of(context).pop();  
               },
             ),
             TextButton(
               child: Text('ใช่'),
               onPressed: () {
                 FirebaseAuth.instance.signOut();
-                Navigator.of(context).pushReplacementNamed('/login');  // นำทางไปหน้า login หลังจากออกจากระบบ
+                Navigator.of(context).pushReplacementNamed('/login');  
               },
             ),
           ],
