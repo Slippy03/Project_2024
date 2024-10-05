@@ -6,6 +6,7 @@ import 'pages/home.dart';
 import 'pages/forum.dart';
 import 'pages/forumform.dart';    // นำเข้า forumform.dart
 import 'pages/profile.dart';      // นำเข้า profile.dart
+import 'pages/predict.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();  // ทำให้แน่ใจว่า Flutter ถูกเริ่มต้นก่อน

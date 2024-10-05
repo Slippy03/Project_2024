@@ -156,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: _loginUser,
                         child: Text('Login'),
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.green,
+                          backgroundColor: Colors.green,
                           foregroundColor: Colors.white                         
                         ),
                       ),

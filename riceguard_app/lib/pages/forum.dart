@@ -41,13 +41,13 @@ class ForumPage extends StatelessWidget {
                       title: Text(
                         forum['title'],
                         style: TextStyle(
-                          color: Colors.lightGreen, // Light green text as in the image
+                          color: Colors.lightGreen, 
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       onTap: () {
-                        // Navigate to forum details
+                        
                       },
                     ),
                   ),
@@ -80,7 +80,7 @@ class ForumPage extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.green.withOpacity(0.2), // Transparent green shadow circle
+                color: Colors.green.withOpacity(0.2), 
               ),
             ),
           ),

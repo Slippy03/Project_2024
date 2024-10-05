@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart'; 
 import 'navbar.dart';
+import 'editprofile.dart'; 
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -15,7 +16,7 @@ class _ProfileScreenState extends State<ProfilePage> {
   late User? currentUser;
   Map<String, dynamic>? userData;
 
-  int _currentIndex = 3; // ตั้งค่าเริ่มต้นให้แท็บ Profile เป็นแท็บที่ถูกเลือก
+  int _currentIndex = 3; 
 
   @override
   void initState() {
@@ -33,7 +34,7 @@ class _ProfileScreenState extends State<ProfilePage> {
             .get();
 
         setState(() {
-          userData = userDoc.data() as Map<String, dynamic>?;
+          userData = userDoc.data() as Map<String, dynamic>? ?? {};
         });
       } catch (e) {
         print('Error fetching user data: $e');
@@ -47,8 +48,16 @@ class _ProfileScreenState extends State<ProfilePage> {
       backgroundColor: Colors.green[100],
       appBar: AppBar(
         backgroundColor: Colors.green,
-        title: Text('Profile'),
-        centerTitle: true,
+        title: Align(
+          alignment: Alignment.centerLeft, 
+          child: Text(
+            'Profile',
+            style: TextStyle(
+              color: Colors.white, 
+            ),
+          ),
+        ),
+        centerTitle: false, 
       ),
       body: userData == null
           ? Center(child: CircularProgressIndicator()) 
@@ -58,18 +67,17 @@ class _ProfileScreenState extends State<ProfilePage> {
                 children: [
                   SizedBox(height: 20),
                   
-                  // ส่วนของโปรไฟล์
                   _buildProfileHeader(),
-
                   SizedBox(height: 20),
                   
-                  // ส่วนของข้อมูลส่วนตัว
                   _buildPersonalInfo(),
+                  
+                  SizedBox(height: 20),
                 ],
               ),
             ),
       
-      // เพิ่ม BottomNavigationBar
+      
       bottomNavigationBar: _buildBottomNavBar(),
     );
   }
@@ -137,7 +145,7 @@ class _ProfileScreenState extends State<ProfilePage> {
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                primary: Colors.orange,
+                backgroundColor: Colors.orange,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -150,17 +158,44 @@ class _ProfileScreenState extends State<ProfilePage> {
           _buildUserInfo('Name', userData!['name']),
           _buildUserInfo('Email', currentUser!.email),
           _buildUserInfo('Phone Number', userData!['phone']),
-          
-  
           _buildUserInfo(
             'เป็นสมาชิกตั้งแต่',
             _formatTimestamp(userData!['created_at']),
+          ),
+          
+          SizedBox(height: 20), 
+          Center(
+            child: ElevatedButton(
+              onPressed: () async {
+                final updatedData = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfilePage(userData: userData!),
+                  ),
+                );
+
+                
+                if (updatedData != null) {
+                  setState(() {
+                    userData!['username'] = updatedData['username']; 
+                    userData!['name'] = updatedData['name']; 
+                    userData!['phone'] = updatedData['phone']; 
+                  });
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text('แก้ไขโปรไฟล์'),
+            ),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildUserInfo(String title, String? info) {
     return Padding(
@@ -186,7 +221,6 @@ class _ProfileScreenState extends State<ProfilePage> {
     );
   }
 
- 
   String _formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) {
       return 'N/A';

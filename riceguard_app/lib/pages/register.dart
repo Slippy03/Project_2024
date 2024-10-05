@@ -26,7 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text.isNotEmpty &&
         _nameController.text.isNotEmpty &&
         _emailController.text.isNotEmpty) { 
-      // Show confirmation dialog
+     
       bool? confirm = await showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -52,7 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (confirm != true) {
-        return; // User canceled registration
+        return; 
       }
 
       try {
@@ -138,7 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  // Logo and app name
+                  
                   Column(
                     children: [
                       Image.asset(
@@ -189,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                         ),
                         SizedBox(height: 20),
-                        // Username
+                        
                         TextField(
                           controller: _usernameController,
                           decoration: InputDecoration(
@@ -204,7 +204,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        // Password
+                        
                         TextField(
                           controller: _passwordController,
                           obscureText: _obscureTextPassword,
@@ -222,7 +222,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        // Name/Surname
+                        
                         TextField(
                           controller: _nameController,
                           decoration: InputDecoration(
@@ -231,7 +231,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        // Phone Number (optional)
+                        
                         TextField(
                           controller: _phoneController,
                           decoration: InputDecoration(
@@ -240,7 +240,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        // Email
+                        
                         TextField(
                           controller: _emailController,
                           decoration: InputDecoration(
@@ -249,7 +249,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         SizedBox(height: 20),
-                        // Farmer Experience
+                        
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -300,7 +300,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: _registerUser,
                           child: Text('Register'),
                           style: ElevatedButton.styleFrom(
-                            primary: Colors.green, 
+                            backgroundColor: Colors.green, 
                             padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                             foregroundColor: Colors.white                         
 

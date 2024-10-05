@@ -62,8 +62,8 @@ class _ForumFormPageState extends State<ForumFormPage> {
               ElevatedButton(
                 onPressed: _createForum,
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.green, // Background color
-                  onPrimary: Colors.white, // Text color
+                  backgroundColor: Colors.green, 
+                  foregroundColor: Colors.white,
                 ),
                 child: Text('สร้างกระทู้'),
               ),
