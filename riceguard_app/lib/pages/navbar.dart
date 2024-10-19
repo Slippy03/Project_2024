@@ -48,7 +48,7 @@ class MyBottomNavBar extends StatelessWidget {
               Navigator.of(context).pushReplacementNamed('/forum');
               break;
             case 2: 
-           
+             Navigator.of(context).pushReplacementNamed('/camera');
               break;
             case 3: 
               Navigator.of(context).pushReplacementNamed('/profile');

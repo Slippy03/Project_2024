@@ -29,7 +29,8 @@ class RiceGuardApp extends StatelessWidget {
       routes: {
         '/login': (context) => LoginPage(),     // เส้นทางสำหรับหน้า login
         '/home': (context) => HomePage(),       // เส้นทางสำหรับหน้า home
-        '/forum': (context) => ForumPage(),     // เส้นทางสำหรับหน้า forum
+        '/forum': (context) => ForumPage(),  
+        '/camera': (context) => predictscreen(),   // เส้นทางสำหรับหน้า forum
         '/forumform': (context) => ForumFormPage(), // เส้นทางสำหรับหน้า forumform
         '/profile': (context) => ProfilePage(),   // เส้นทางสำหรับหน้า profile
       },
