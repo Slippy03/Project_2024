@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:riceguard_app/firebase_options.dart';
+import 'package:riceguard_app/pages/forumview.dart';
 import 'pages/login.dart';
 import 'pages/home.dart';
 import 'pages/forum.dart';
@@ -33,6 +34,7 @@ class RiceGuardApp extends StatelessWidget {
         '/camera': (context) => predictscreen(),   // เส้นทางสำหรับหน้า forum
         '/forumform': (context) => ForumFormPage(), // เส้นทางสำหรับหน้า forumform
         '/profile': (context) => ProfilePage(),   // เส้นทางสำหรับหน้า profile
+        '/forumview': (context) => ForumViewPage(),
       },
     );
   }
