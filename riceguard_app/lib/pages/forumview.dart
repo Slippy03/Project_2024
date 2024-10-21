@@ -30,13 +30,13 @@ class ForumViewPage extends StatelessWidget {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  forumData['content'], // สมมติว่า forum มี field ชื่อ content
+                  forumData['content'],
                   style: TextStyle(fontSize: 16),
                 ),
                 SizedBox(height: 16),
                 // ข้อความเกี่ยวกับผู้สร้าง
                 Text(
-                  'โดย ${forumData['username']}', // สมมติว่ามีฟิลด์ creator
+                  'โดย ${forumData['username']}',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
