@@ -38,7 +38,10 @@ class _LoginPageState extends State<LoginPage> {
             email = querySnapshot.docs[0]['email'];
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("ไม่พบชื่อผู้ใช้ในระบบ")),
+              SnackBar(
+                content: Text("ไม่พบชื่อผู้ใช้ในระบบ"),
+                backgroundColor: Colors.red, // Set background to red
+              ),
             );
             return;
           }
@@ -53,12 +56,18 @@ class _LoginPageState extends State<LoginPage> {
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Login failed: $e")),
+          SnackBar(
+            content: Text("Login failed: $e"),
+            backgroundColor: Colors.red, // Set background to red
+          ),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน")),
+        SnackBar(
+          content: Text("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน"),
+          backgroundColor: Colors.red, // Set background to red
+        ),
       );
     }
   }

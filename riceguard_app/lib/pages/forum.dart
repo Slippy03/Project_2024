@@ -47,7 +47,11 @@ class ForumPage extends StatelessWidget {
                         ),
                       ),
                       onTap: () {
-                        
+                        Navigator.pushNamed(
+                          context,
+                          '/forumview',
+                          arguments: forum.id, // ส่ง forum ID หรือข้อมูลที่ต้องการ
+                        );
                       },
                     ),
                   ),
@@ -63,24 +67,25 @@ class ForumPage extends StatelessWidget {
           Positioned(
             bottom: 10,
             right: 10,
-            child: FloatingActionButton(
-              onPressed: () {
+            child: GestureDetector(
+              onTap: () {
                 Navigator.pushNamed(context, '/forumform');
               },
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              child: Icon(Icons.add),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green.withOpacity(0.2), 
+              child: Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.green.withOpacity(0.2),
+                ),
+                child: FloatingActionButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/forumform');
+                  },
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  child: Icon(Icons.add),
+                ),
               ),
             ),
           ),

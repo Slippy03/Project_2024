@@ -63,7 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (usernameQuery.docs.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("มีชื่อผู้ใช้นี้ในระบบแล้ว")),
+            SnackBar(content: Text("มีชื่อผู้ใช้นี้ในระบบแล้ว"),backgroundColor: Colors.red,),
           );
           return;
         }
@@ -85,6 +85,7 @@ class _RegisterPageState extends State<RegisterPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("ละทะเบียนสำเร็จ!"),
+            backgroundColor: Colors.green,
           ),
         );
 
@@ -98,12 +99,14 @@ class _RegisterPageState extends State<RegisterPage> {
           _errorMessage = e.toString();
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ลงทะเบียนไม่สำเร็จ: $_errorMessage")),
+          SnackBar(content: Text("ลงทะเบียนไม่สำเร็จ: $_errorMessage"),backgroundColor: Colors.red,),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("กรุณากรอกข้อมูลให้ครบถ้วน!")),
+        SnackBar(content: Text("กรุณากรอกข้อมูลให้ครบถ้วน!"),
+        backgroundColor: Colors.red,),
+        
       );
     }
   }

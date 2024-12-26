@@ -2,17 +2,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:riceguard_app/pages/home.dart';
 
-class predictscreen extends StatefulWidget {
+class PredictScreen extends StatefulWidget {
   @override
-  _predictscreen createState() => _predictscreen();
+  _PredictScreenState createState() => _PredictScreenState();
 }
 
-class _predictscreen extends State<predictscreen> {
+class _PredictScreenState extends State<PredictScreen> {
   File? _image;  
   final ImagePicker _picker = ImagePicker();  
 
-  
   Future<void> _pickImageFromGallery() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
@@ -23,7 +23,6 @@ class _predictscreen extends State<predictscreen> {
     }
   }
 
-  
   Future<void> _pickImageFromCamera() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
 
@@ -34,24 +33,18 @@ class _predictscreen extends State<predictscreen> {
     }
   }
 
-  
   Future<void> _uploadImage() async {
     if (_image == null) return;
 
     try {
-      
       String fileName = 'uploads/${DateTime.now().millisecondsSinceEpoch.toString()}.jpg';
-      
       Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
-      
       
       UploadTask uploadTask = storageRef.putFile(_image!);
       await uploadTask.whenComplete(() => null); 
 
-      
       String downloadURL = await storageRef.getDownloadURL();
 
-      
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Upload Successful!'),
       ));
@@ -71,15 +64,19 @@ class _predictscreen extends State<predictscreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Upload Image to Firebase'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacementNamed('/home');  // กลับไปยังหน้าก่อนหน้า
+          },
+        ),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            
             _image == null
                 ? Text('No image selected.')
-              
                 : Container(
                     width: 400,  
                     height: 400, 
