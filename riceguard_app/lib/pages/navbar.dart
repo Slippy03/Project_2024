@@ -10,19 +10,15 @@ class MyBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: currentIndex, 
+      currentIndex: currentIndex,
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
-          label: 'Home',
+          label: 'Home', 
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.forum),
-          label: 'Forum',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.camera_alt),
-          label: 'Camera',
+          label: 'Notification',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
@@ -35,11 +31,11 @@ class MyBottomNavBar extends StatelessWidget {
       ],
       selectedItemColor: Colors.green,
       unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
       onTap: (index) {
-        if (index == 4) {  
+        if (index == 3) {  
           _showLogoutDialog(context);
         } else {
-          
           switch (index) {
             case 0: 
               Navigator.of(context).pushReplacementNamed('/home');
@@ -48,9 +44,6 @@ class MyBottomNavBar extends StatelessWidget {
               Navigator.of(context).pushReplacementNamed('/forum');
               break;
             case 2: 
-             Navigator.of(context).pushReplacementNamed('/camera');
-              break;
-            case 3: 
               Navigator.of(context).pushReplacementNamed('/profile');
               break;
           }
@@ -60,14 +53,13 @@ class MyBottomNavBar extends StatelessWidget {
     );
   }
 
- 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Logout'),
-          content: Text('ต้องการออกจากระบบใช่หรือไม่?'),
+          content: Text('ต้องการออกจากระบบใช่หรือไม่ ?'),
           actions: <Widget>[
             TextButton(
               child: Text('ไม่'),

@@ -71,7 +71,6 @@ class _ForumFormPageState extends State<ForumFormPage> {
           ),
         ),
       ),
-      bottomNavigationBar: MyBottomNavBar(currentIndex: 1, onTap: (index) {}),
     );
   }
 }

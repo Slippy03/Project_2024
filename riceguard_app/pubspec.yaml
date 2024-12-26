@@ -40,7 +40,9 @@ dependencies:
   firebase_core: ^3.6.0
   cloud_firestore: ^5.4.4
   firebase_storage: ^12.3.2
-  google_maps_flutter: ^2.9.0
+  google_maps_flutter: ^2.10.0
+  flutter_polyline_points: ^2.1.0
+  dio: ^5.7.0
 
 
 dev_dependencies:

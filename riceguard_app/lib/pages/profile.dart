@@ -230,13 +230,6 @@ class _ProfileScreenState extends State<ProfilePage> {
   }
 
   Widget _buildBottomNavBar() {
-    return MyBottomNavBar(
-      currentIndex: _currentIndex,
-      onTap: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-    );
+    return MyBottomNavBar(currentIndex: 2, onTap: (index) {});
   }
 }

@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath 'com.google.gms:google-services:4.3.10'  // Corrected version for Google Services
+    }
+}
+
 plugins {
     id "com.android.application"
     // START: FlutterFire Configuration
@@ -7,6 +18,7 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Rest of the file stays the same
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -45,7 +57,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.riceguard_app"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -60,17 +72,6 @@ android {
 
 flutter {
     source '../..'
-}
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
-        classpath 'com.google.gms:google-services:4.3.10'  // Corrected version for Google Services
-    }
 }
 
 dependencies {
