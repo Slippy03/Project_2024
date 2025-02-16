@@ -87,18 +87,23 @@ class ForumViewPage extends StatelessWidget {
                       onPressed: () async {
                         final currentUser = FirebaseAuth.instance.currentUser;
                         if (_commentController.text.isNotEmpty && currentUser != null) {
+                          final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+                          final username = userDoc.exists ? userDoc['username'] : 'Anonymous';
+
                           await FirebaseFirestore.instance
                               .collection('forums')
                               .doc(forumId)
                               .collection('comments')
                               .add({
-                            'username': currentUser.displayName ?? 'Anonymous',
+                            'username': username, 
                             'content': _commentController.text,
                             'timestamp': FieldValue.serverTimestamp(),
                           });
-                          _commentController.clear();
-                        }
-                      },
+
+                            _commentController.clear();
+                          }
+                        },
+
                     ),
                   ],
                 ),
