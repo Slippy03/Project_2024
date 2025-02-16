@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:riceguard_app/pages/forumview.dart'; 
 import 'package:riceguard_app/firebase_options.dart';
-import 'package:riceguard_app/pages/navbar.dart';
 import 'pages/login.dart';
 import 'pages/home.dart';
 import 'pages/forum.dart';
@@ -28,13 +28,14 @@ class RiceGuardApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       
-      initialRoute: '/googlemap', 
+      initialRoute: '/login', 
       routes: {
         '/login': (context) => LoginPage(),     
         '/home': (context) => HomePage(),       
         '/forum': (context) => ForumPage(),  
         '/camera': (context) => PredictScreeen(),   
         '/forumform': (context) => ForumFormPage(), 
+        '/forumview': (context) => ForumViewPage(), 
         '/profile': (context) => ProfilePage(),
         '/googlemap':(context) => GoogleMapPage(),
       },
