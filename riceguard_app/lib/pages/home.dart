@@ -1,32 +1,6 @@
 import 'package:flutter/material.dart';
-import 'navbar.dart';  
 
-class HomePage extends StatefulWidget {
-  @override
-  _HomePageState createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;  
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.of(context).pushReplacementNamed('/home');
-        break;
-      case 1:
-        Navigator.of(context).pushReplacementNamed('/forum');
-        break;
-      case 2:
-        Navigator.of(context).pushReplacementNamed('/profile');
-        break;
-    }
-  }
-
+class HomePage extends StatelessWidget {  // ✅ เปลี่ยนจาก Stateful เป็น Stateless
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,7 +29,7 @@ class _HomePageState extends State<HomePage> {
               'ระบบ Forum สำหรับแลกเปลี่ยนข้อมูล',
               'assets/images/mail-box.png',
               () {
-                Navigator.of(context).pushNamed('/forum'); // Navigate to ForumPage
+                Navigator.of(context).pushNamed('/forum'); 
               },
             ),
             _buildMenuItem(
@@ -92,10 +66,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: MyBottomNavBar(
-        currentIndex: _selectedIndex, 
-        onTap: _onItemTapped, 
       ),
     );
   }

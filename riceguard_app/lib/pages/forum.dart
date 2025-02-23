@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'navbar.dart';
 
-class ForumPage extends StatelessWidget {
+class ForumPage extends StatefulWidget {
+  @override
+  _ForumPageState createState() => _ForumPageState();
+}
+
+class _ForumPageState extends State<ForumPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,7 +45,7 @@ class ForumPage extends StatelessWidget {
                       title: Text(
                         forum['title'],
                         style: TextStyle(
-                          color: Colors.lightGreen, 
+                          color: Colors.lightGreen,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -50,7 +54,7 @@ class ForumPage extends StatelessWidget {
                         Navigator.pushNamed(
                           context,
                           '/forumview',
-                          arguments: forum.id, // ส่ง forum ID หรือข้อมูลที่ต้องการ
+                          arguments: forum.id,
                         );
                       },
                     ),
@@ -61,37 +65,14 @@ class ForumPage extends StatelessWidget {
           },
         ),
       ),
-      floatingActionButton: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Positioned(
-            bottom: 10,
-            right: 10,
-            child: GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/forumform');
-              },
-              child: Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.green.withOpacity(0.2),
-                ),
-                child: FloatingActionButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/forumform');
-                  },
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  child: Icon(Icons.add),
-                ),
-              ),
-            ),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/forumform');
+        },
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        child: Icon(Icons.add),
       ),
-      bottomNavigationBar: MyBottomNavBar(currentIndex: 1, onTap: (index) {}),
     );
   }
 }

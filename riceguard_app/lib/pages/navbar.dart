@@ -36,18 +36,7 @@ class MyBottomNavBar extends StatelessWidget {
         if (index == 3) {  
           _showLogoutDialog(context);
         } else {
-          switch (index) {
-            case 0: 
-              Navigator.of(context).pushReplacementNamed('/home');
-              break;
-            case 1: 
-              Navigator.of(context).pushReplacementNamed('/forum');
-              break;
-            case 2: 
-              Navigator.of(context).pushReplacementNamed('/profile');
-              break;
-          }
-          onTap(index);  
+          onTap(index); // อัปเดต index แทนการใช้ Navigator
         }
       },
     );
@@ -63,14 +52,13 @@ class MyBottomNavBar extends StatelessWidget {
           actions: <Widget>[
             TextButton(
               child: Text('ไม่'),
-              onPressed: () {
-                Navigator.of(context).pop();  
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: Text('ใช่'),
               onPressed: () {
                 FirebaseAuth.instance.signOut();
+                Navigator.of(context).pop();  
                 Navigator.of(context).pushReplacementNamed('/login');  
               },
             ),

@@ -1,18 +1,18 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:riceguard_app/pages/forumview.dart'; 
 import 'package:riceguard_app/firebase_options.dart';
+
 import 'pages/login.dart';
-import 'pages/home.dart';
-import 'pages/forum.dart';
-import 'pages/forumform.dart';    
-import 'pages/profile.dart';      
+import 'pages/forumview.dart';
+import 'pages/forumform.dart';
+import 'pages/profile.dart';
 import 'pages/PredictScreeen.dart';
 import 'pages/GoogleMapPage.dart';
+import 'pages/mainscreen.dart'; // ✅ Import MainScreen
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  
-  await Firebase.initializeApp(               
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(RiceGuardApp());
@@ -27,17 +27,15 @@ class RiceGuardApp extends StatelessWidget {
         primarySwatch: Colors.green,
       ),
       debugShowCheckedModeBanner: false,
-      
-      initialRoute: '/login', 
+
+      home: MainScreen(), // ✅ เปลี่ยนให้ MainScreen เป็นหน้าหลัก
+
       routes: {
-        '/login': (context) => LoginPage(),     
-        '/home': (context) => HomePage(),       
-        '/forum': (context) => ForumPage(),  
-        '/camera': (context) => PredictScreeen(),   
-        '/forumform': (context) => ForumFormPage(), 
-        '/forumview': (context) => ForumViewPage(), 
+        '/login': (context) => LoginPage(),
+        '/forumview': (context) => ForumViewPage(),
+        '/forumform': (context) => ForumFormPage(),
         '/profile': (context) => ProfilePage(),
-        '/googlemap':(context) => GoogleMapPage(),
+        '/googlemap': (context) => GoogleMapPage(),
       },
     );
   }
