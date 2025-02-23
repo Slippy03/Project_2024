@@ -28,7 +28,7 @@ class RiceGuardApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       
-      initialRoute: '/googlemap', 
+      initialRoute: '/login', 
       routes: {
         '/login': (context) => LoginPage(),     
         '/home': (context) => HomePage(),       

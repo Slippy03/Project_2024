@@ -79,7 +79,7 @@ class _HomePageState extends State<HomePage> {
               'สำรวจบริเวณที่เกิดโรค',
               'assets/images/maps.png',
               () {
-                // ไปที่หน้าสำรวจ
+                Navigator.of(context).pushNamed('/googlemap');
               },
             ),
             _buildMenuItem(

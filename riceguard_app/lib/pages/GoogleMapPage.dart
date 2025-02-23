@@ -23,9 +23,10 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   void initState() {
     super.initState();
     _loadMarkers();
-    _getCurrentLocation();
+    _getCurrentLocation(); // Load GPS automatically when app starts
   }
 
+  // Location related functions
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -54,9 +55,22 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       _currentLocation = LatLng(position.latitude, position.longitude);
     });
 
-    _mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
+    if (_mapController != null && _currentLocation != null) {
+      _mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
+    }
   }
 
+  void _focusOnMyLocation() {
+    if (_currentLocation != null) {
+      _mapController.animateCamera(CameraUpdate.newCameraPosition(
+          CameraPosition(target: _currentLocation!, zoom: 16)));
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Location not available!")));
+    }
+  }
+
+  // Marker related functions
   Future<void> _loadMarkers() async {
     FirebaseFirestore.instance.collection('pins').get().then((snapshot) {
       setState(() {
@@ -67,14 +81,94 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             position: LatLng(data['lat'], data['lng']),
             infoWindow: InfoWindow(
               title: data['title'],
-              snippet: data['description'],
+              snippet:
+                  'Description: ${data['description']}\nAdded by: ${data['username']}',
             ),
+            onTap: () {
+              _showMarkerDetailDialog(
+                  doc.id, data['title'], data['description'], data['username']);
+            },
           );
         }).toSet();
       });
     });
   }
 
+  Future<void> _showMarkerDetailDialog(String markerId, String title,
+      String description, String username) async {
+    TextEditingController commentController = TextEditingController();
+
+    FirebaseFirestore.instance
+        .collection('pins')
+        .doc(markerId)
+        .collection('comments')
+        .get()
+        .then((snapshot) {
+      List comments =
+          snapshot.docs.map((doc) => doc['comment']).toList();
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(title),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Description: $description"),
+                  SizedBox(height: 10),
+                  Text("Added by: $username"),
+                  SizedBox(height: 20),
+                  Text("Comments:"),
+                  for (var comment in comments)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Text("- $comment"),
+                    ),
+                  SizedBox(height: 10),
+                  TextField(
+                    controller: commentController,
+                    decoration: InputDecoration(labelText: "Add a comment"),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Close"),
+              ),
+              TextButton(
+                onPressed: () {
+                  _addComment(markerId, commentController.text);
+                  Navigator.pop(context);
+                },
+                child: Text("Save Comment"),
+              ),
+            ],
+          );
+        },
+      );
+    });
+  }
+
+  Future<void> _addComment(String markerId, String comment) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || comment.isEmpty) return;
+
+    await FirebaseFirestore.instance
+        .collection('pins')
+        .doc(markerId)
+        .collection('comments')
+        .add({
+      'comment': comment,
+      'username': user.displayName ?? user.email,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Pin current location functions
   Future<void> _pinCurrentLocation() async {
     if (_currentLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,7 +236,10 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     final newMarker = Marker(
       markerId: MarkerId(position.toString()),
       position: position,
-      infoWindow: InfoWindow(title: title, snippet: description),
+      infoWindow: InfoWindow(
+        title: title,
+        snippet: description,
+      ),
     );
 
     await FirebaseFirestore.instance.collection('pins').add({
@@ -174,12 +271,22 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
           ),
           Positioned(
             left: 16.0,
-            bottom: 80.0,
+            bottom: 140.0,
             child: FloatingActionButton(
               onPressed: _pinCurrentLocation,
               child: Icon(Icons.location_pin, color: Colors.white),
               backgroundColor: Colors.green,
               tooltip: "Pin Current Location",
+            ),
+          ),
+          Positioned(
+            left: 16.0,
+            bottom: 80.0,
+            child: FloatingActionButton(
+              onPressed: _focusOnMyLocation,
+              child: Icon(Icons.center_focus_strong, color: Colors.white),
+              backgroundColor: Colors.orange,
+              tooltip: "Focus on My Location",
             ),
           ),
           Positioned(
