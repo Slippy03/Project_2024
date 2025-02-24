@@ -14,7 +14,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   Set<Marker> _markers = {};
   LatLng? _currentLocation;
 
-  final CameraPosition _initialPosition = CameraPosition(
+  final CameraPosition _initialPosition = const CameraPosition(
     target: LatLng(13.736717, 100.523186),
     zoom: 12,
   );
@@ -34,7 +34,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Please enable location services")));
+          const SnackBar(content: Text("Please enable location services")));
       return;
     }
 
@@ -42,7 +42,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.deniedForever) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("Location permission is permanently denied")));
         return;
       }
@@ -66,7 +66,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
           CameraPosition(target: _currentLocation!, zoom: 16)));
     } else {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Location not available!")));
+          .showSnackBar(const SnackBar(content: Text("Location not available!")));
     }
   }
 
@@ -84,6 +84,8 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
               snippet:
                   'Description: ${data['description']}\nAdded by: ${data['username']}',
             ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueAzure), // Custom marker color
             onTap: () {
               _showMarkerDetailDialog(
                   doc.id, data['title'], data['description'], data['username']);
@@ -117,19 +119,19 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("Description: $description"),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Text("Added by: $username"),
-                  SizedBox(height: 20),
-                  Text("Comments:"),
+                  const SizedBox(height: 20),
+                  const Text("Comments:"),
                   for (var comment in comments)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Text("- $comment"),
                     ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: commentController,
-                    decoration: InputDecoration(labelText: "Add a comment"),
+                    decoration: const InputDecoration(labelText: "Add a comment"),
                   ),
                 ],
               ),
@@ -137,14 +139,14 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text("Close"),
+                child: const Text("Close"),
               ),
               TextButton(
                 onPressed: () {
                   _addComment(markerId, commentController.text);
                   Navigator.pop(context);
                 },
-                child: Text("Save Comment"),
+                child: const Text("Save Comment"),
               ),
             ],
           );
@@ -172,7 +174,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   Future<void> _pinCurrentLocation() async {
     if (_currentLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Fetching current location...")));
+          const SnackBar(content: Text("Fetching current location...")));
       return;
     }
 
@@ -183,7 +185,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Please log in first!")));
+          .showSnackBar(const SnackBar(content: Text("Please log in first!")));
       return;
     }
 
@@ -194,25 +196,25 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Add a Pin"),
+          title: const Text("Add a Pin"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text("Location: ${position.latitude}, ${position.longitude}"),
               TextField(
                 controller: titleController,
-                decoration: InputDecoration(labelText: "Title"),
+                decoration: const InputDecoration(labelText: "Title"),
               ),
               TextField(
                 controller: descriptionController,
-                decoration: InputDecoration(labelText: "Description"),
+                decoration: const InputDecoration(labelText: "Description"),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
+              child: const Text("Cancel"),
             ),
             TextButton(
               onPressed: () {
@@ -220,7 +222,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                     position, titleController.text, descriptionController.text);
                 Navigator.pop(context);
               },
-              child: Text("Save"),
+              child: const Text("Save"),
             ),
           ],
         );
@@ -240,6 +242,8 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
         title: title,
         snippet: description,
       ),
+      icon: BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueRed), // Custom marker color
     );
 
     await FirebaseFirestore.instance.collection('pins').add({
@@ -258,7 +262,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Google Map with GPS')),
+      appBar: AppBar(title: const Text('Google Map with GPS')),
       body: Stack(
         children: [
           GoogleMap(
@@ -274,7 +278,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             bottom: 140.0,
             child: FloatingActionButton(
               onPressed: _pinCurrentLocation,
-              child: Icon(Icons.location_pin, color: Colors.white),
+              child: const Icon(Icons.location_pin, color: Colors.white),
               backgroundColor: Colors.green,
               tooltip: "Pin Current Location",
             ),
@@ -284,7 +288,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             bottom: 80.0,
             child: FloatingActionButton(
               onPressed: _focusOnMyLocation,
-              child: Icon(Icons.center_focus_strong, color: Colors.white),
+              child: const Icon(Icons.center_focus_strong, color: Colors.white),
               backgroundColor: Colors.orange,
               tooltip: "Focus on My Location",
             ),
@@ -294,7 +298,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             bottom: 16.0,
             child: FloatingActionButton(
               onPressed: _getCurrentLocation,
-              child: Icon(Icons.my_location, color: Colors.white),
+              child: const Icon(Icons.my_location, color: Colors.white),
               backgroundColor: Colors.blue,
               tooltip: "Get Current Location",
             ),
