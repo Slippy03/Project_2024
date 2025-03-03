@@ -259,6 +259,37 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     });
   }
 
+  void _showPinsList() {
+    FirebaseFirestore.instance.collection('pins').get().then((snapshot) {
+      List<Map<String, dynamic>> pins = snapshot.docs.map((doc) => doc.data()).toList();
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("List of Pins"),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: pins.map((pin) {
+                  return ListTile(
+                    title: Text(pin['title']),
+                    subtitle: Text(pin['description']),
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Close"),
+              ),
+            ],
+          );
+        },
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -275,7 +306,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
           ),
           Positioned(
             left: 16.0,
-            bottom: 140.0,
+            bottom: 200.0,
             child: FloatingActionButton(
               onPressed: _pinCurrentLocation,
               child: const Icon(Icons.location_pin, color: Colors.white),
@@ -285,7 +316,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
           ),
           Positioned(
             left: 16.0,
-            bottom: 80.0,
+            bottom: 140.0,
             child: FloatingActionButton(
               onPressed: _focusOnMyLocation,
               child: const Icon(Icons.center_focus_strong, color: Colors.white),
@@ -294,13 +325,23 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             ),
           ),
           Positioned(
-            right: 16.0,
-            bottom: 16.0,
+            left: 16.0,
+            bottom: 80.0,
             child: FloatingActionButton(
               onPressed: _getCurrentLocation,
               child: const Icon(Icons.my_location, color: Colors.white),
               backgroundColor: Colors.blue,
               tooltip: "Get Current Location",
+            ),
+          ),
+          Positioned(
+            left: 16.0,
+            bottom: 20.0,
+            child: FloatingActionButton(
+              onPressed: _showPinsList,
+              child: const Icon(Icons.list, color: Colors.white),
+              backgroundColor: Colors.purple,
+              tooltip: "Show Pins List",
             ),
           ),
         ],
