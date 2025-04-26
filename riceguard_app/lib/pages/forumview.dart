@@ -1,9 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
-class ForumViewPage extends StatelessWidget {
+class ForumViewPage extends StatefulWidget {
+  @override
+  _ForumViewPageState createState() => _ForumViewPageState();
+}
+
+class _ForumViewPageState extends State<ForumViewPage> {
   final TextEditingController _commentController = TextEditingController();
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImage(File imageFile) async {
+    try {
+      String fileName = 'comments/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      TaskSnapshot snapshot = await FirebaseStorage.instance
+          .ref(fileName)
+          .putFile(imageFile);
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      print("Error uploading image: $e");
+      return null;
+    }
+  }
+
+  Future<void> _postComment(String forumId) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || _commentController.text.isEmpty) return;
+
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+    final username = userDoc.exists ? userDoc['username'] : 'Anonymous';
+
+    String? imageUrl;
+    if (_imageFile != null) {
+      imageUrl = await _uploadImage(_imageFile!);
+    }
+
+    await FirebaseFirestore.instance
+        .collection('forums')
+        .doc(forumId)
+        .collection('comments')
+        .add({
+      'username': username,
+      'content': _commentController.text,
+      'imageUrl': imageUrl,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    _commentController.clear();
+    setState(() {
+      _imageFile = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +103,6 @@ class ForumViewPage extends StatelessWidget {
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 Divider(height: 32, color: Colors.grey),
-                // Comment Section
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
@@ -62,7 +122,17 @@ class ForumViewPage extends StatelessWidget {
                           final comment = comments[index];
                           return ListTile(
                             title: Text(comment['username']),
-                            subtitle: Text(comment['content']),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(comment['content']),
+                                if (comment['imageUrl'] != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Image.network(comment['imageUrl']),
+                                  ),
+                              ],
+                            ),
                             trailing: Text(
                               comment['timestamp']?.toDate().toString() ?? '',
                               style: TextStyle(fontSize: 10, color: Colors.grey),
@@ -73,9 +143,12 @@ class ForumViewPage extends StatelessWidget {
                     },
                   ),
                 ),
-                // Add Comment Section
                 Row(
                   children: [
+                    IconButton(
+                      icon: Icon(Icons.image, color: Colors.green),
+                      onPressed: _pickImage,
+                    ),
                     Expanded(
                       child: TextField(
                         controller: _commentController,
@@ -84,29 +157,28 @@ class ForumViewPage extends StatelessWidget {
                     ),
                     IconButton(
                       icon: Icon(Icons.add, color: Colors.green),
-                      onPressed: () async {
-                        final currentUser = FirebaseAuth.instance.currentUser;
-                        if (_commentController.text.isNotEmpty && currentUser != null) {
-                          final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
-                          final username = userDoc.exists ? userDoc['username'] : 'Anonymous';
-
-                          await FirebaseFirestore.instance
-                              .collection('forums')
-                              .doc(forumId)
-                              .collection('comments')
-                              .add({
-                            'username': username, 
-                            'content': _commentController.text,
-                            'timestamp': FieldValue.serverTimestamp(),
-                          });
-
-                            _commentController.clear();
-                          }
-                        },
-
+                      onPressed: () => _postComment(forumId),
                     ),
                   ],
                 ),
+                if (_imageFile != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        Image.file(_imageFile!, height: 100),
+                        IconButton(
+                          icon: Icon(Icons.cancel, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _imageFile = null;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           );

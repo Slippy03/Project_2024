@@ -28,7 +28,7 @@ class RiceGuardApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
 
-      home: MainScreen(), // ✅ เปลี่ยนให้ MainScreen เป็นหน้าหลัก
+      home:LoginPage(), 
 
       routes: {
         '/login': (context) => LoginPage(),
