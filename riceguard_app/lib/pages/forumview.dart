@@ -24,12 +24,15 @@ class _ForumViewPageState extends State<ForumViewPage> {
     }
   }
 
-  Future<String?> _uploadImage(File imageFile) async {
+  Future<String?> _uploadImage(File imageFile, String forumId, User currentUser) async {
     try {
-      String fileName = 'comments/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      String filePath = 'forums/$forumId/comments/${currentUser.uid}_$timestamp.jpg';
+
       TaskSnapshot snapshot = await FirebaseStorage.instance
-          .ref(fileName)
+          .ref(filePath)
           .putFile(imageFile);
+      
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
       print("Error uploading image: $e");
@@ -46,7 +49,7 @@ class _ForumViewPageState extends State<ForumViewPage> {
 
     String? imageUrl;
     if (_imageFile != null) {
-      imageUrl = await _uploadImage(_imageFile!);
+      imageUrl = await _uploadImage(_imageFile!, forumId, currentUser); // ส่ง forumId กับ currentUser
     }
 
     await FirebaseFirestore.instance
