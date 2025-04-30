@@ -1,50 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'navbar.dart';
 
 class ForumFormPage extends StatefulWidget {
+  final String? initialTitle;
+  final String? initialContent;
+  final String? pinId; // ✅ เพิ่ม pinId
+
+  const ForumFormPage({
+    this.initialTitle,
+    this.initialContent,
+    this.pinId, // ✅ รองรับ pinId
+    Key? key,
+  }) : super(key: key);
+
   @override
   _ForumFormPageState createState() => _ForumFormPageState();
 }
 
 class _ForumFormPageState extends State<ForumFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _contentController;
 
-  // Function to fetch username from Firestore 'users' collection
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialTitle ?? '');
+    _contentController =
+        TextEditingController(text: widget.initialContent ?? '');
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  // ดึงชื่อผู้ใช้จาก Firestore
   Future<String> _getUsername(String uid) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+    try {
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-    if (userDoc.exists && userDoc['username'] != null) {
-      return userDoc['username']; // Assuming 'username' field exists in 'users' collection
-    } else {
-      return 'Anonymous'; // Default if no username is found
+      if (userDoc.exists && userDoc['username'] != null) {
+        return userDoc['username'];
+      } else {
+        return 'Anonymous';
+      }
+    } catch (e) {
+      print('Error fetching username: $e');
+      return 'Anonymous';
     }
   }
 
   Future<void> _createForum() async {
-    // Get current user
     User? user = FirebaseAuth.instance.currentUser;
 
     if (_formKey.currentState!.validate() && user != null) {
-      // Fetch username from Firestore 'users' collection
       String username = await _getUsername(user.uid);
 
-      // Create a new document with a unique ID
-      DocumentReference forumRef = FirebaseFirestore.instance.collection('forums').doc();
+      DocumentReference forumRef =
+          FirebaseFirestore.instance.collection('forums').doc();
 
       await forumRef.set({
-        'id': forumRef.id, // Add the unique forum ID here
-        'title': _titleController.text,
-        'content': _contentController.text,
-        'username': username, // Add the fetched username here
+        'id': forumRef.id,
+        'title': _titleController.text.trim(),
+        'content': _contentController.text.trim(),
+        'username': username,
         'timestamp': Timestamp.now(),
+        'uid': user.uid,
+        if (widget.pinId != null && widget.pinId!.isNotEmpty)
+          'pinId': widget.pinId, // ✅ เก็บ pinId ถ้ามี
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Forum created successfully!")),
+      );
 
       Navigator.pop(context);
     }
@@ -63,11 +96,27 @@ class _ForumFormPageState extends State<ForumFormPage> {
           key: _formKey,
           child: Column(
             children: [
+              if (widget.pinId != null) // ✅ แสดงข้อความว่าอิงจาก Pin
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.link, color: Colors.green),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          "โพสต์นี้เชื่อมกับตำแหน่งบนแผนที่ (Pin ID: ${widget.pinId})",
+                          style: TextStyle(color: Colors.green[700]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(labelText: 'หัวข้อกระทู้'),
                 validator: (value) {
-                  if (value!.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'กรุณากรอกหัวข้อกระทู้';
                   }
                   return null;
@@ -79,20 +128,22 @@ class _ForumFormPageState extends State<ForumFormPage> {
                 decoration: InputDecoration(labelText: 'เนื้อหาของกระทู้'),
                 maxLines: 5,
                 validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'กรุณากรอกเนื้อหาของกระทู้'; 
+                  if (value == null || value.trim().isEmpty) {
+                    return 'กรุณากรอกเนื้อหาของกระทู้';
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 16.0),
-              ElevatedButton(
+              SizedBox(height: 24.0),
+              ElevatedButton.icon(
                 onPressed: _createForum,
+                icon: Icon(Icons.send),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green, 
+                  backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 48),
                 ),
-                child: Text('สร้างกระทู้'),
+                label: Text('สร้างกระทู้'),
               ),
             ],
           ),
