@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "627224015618",
+    "project_id": "riceguardapp-c3931",
+    "storage_bucket": "riceguardapp-c3931.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627224015618:android:4d1a34bad84c9a956d481b",
+        "android_client_info": {
+          "package_name": "com.example.riceguard_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBV4U5OsHjr8FnkgKxbvrfm2X89K69BPQk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
