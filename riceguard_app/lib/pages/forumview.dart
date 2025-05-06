@@ -24,15 +24,14 @@ class _ForumViewPageState extends State<ForumViewPage> {
     }
   }
 
-  Future<String?> _uploadImage(File imageFile, String forumId, User currentUser) async {
+  Future<String?> _uploadImage(
+      File imageFile, String forumId, User currentUser) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      String filePath = 'forums/$forumId/comments/${currentUser.uid}_$timestamp.jpg';
-
-      TaskSnapshot snapshot = await FirebaseStorage.instance
-          .ref(filePath)
-          .putFile(imageFile);
-      
+      String filePath =
+          'forums/$forumId/comments/${currentUser.uid}_$timestamp.jpg';
+      TaskSnapshot snapshot =
+          await FirebaseStorage.instance.ref(filePath).putFile(imageFile);
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
       print("Error uploading image: $e");
@@ -44,12 +43,15 @@ class _ForumViewPageState extends State<ForumViewPage> {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null || _commentController.text.isEmpty) return;
 
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
     final username = userDoc.exists ? userDoc['username'] : 'Anonymous';
 
     String? imageUrl;
     if (_imageFile != null) {
-      imageUrl = await _uploadImage(_imageFile!, forumId, currentUser); // ส่ง forumId กับ currentUser
+      imageUrl = await _uploadImage(_imageFile!, forumId, currentUser);
     }
 
     await FirebaseFirestore.instance
@@ -71,7 +73,14 @@ class _ForumViewPageState extends State<ForumViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final String forumId = ModalRoute.of(context)!.settings.arguments as String;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args == null || args is! String || args.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text("Forum Details")),
+        body: Center(child: Text("Forum ID is missing")),
+      );
+    }
+    final String forumId = args;
 
     return Scaffold(
       appBar: AppBar(
@@ -80,31 +89,54 @@ class _ForumViewPageState extends State<ForumViewPage> {
         foregroundColor: Colors.white,
       ),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('forums').doc(forumId).get(),
+        future:
+            FirebaseFirestore.instance.collection('forums').doc(forumId).get(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
-          final forumData = snapshot.data!;
+
+          final forumDoc = snapshot.data!;
+          final data = forumDoc.data() as Map<String, dynamic>;
+          final hasPin = data.containsKey('pinId') &&
+              (data['pinId']?.toString().isNotEmpty ?? false);
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  forumData['title'],
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.lightGreen),
+                  data['title'] ?? '',
+                  style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.lightGreen),
                 ),
                 SizedBox(height: 16),
-                Text(
-                  forumData['content'],
-                  style: TextStyle(fontSize: 16),
-                ),
+                Text(data['content'] ?? '', style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
-                Text(
-                  'โดย ${forumData['username']}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
+                Text('โดย ${data['username'] ?? 'Unknown'}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+                if (hasPin)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/map_from_forum',
+                          arguments: data['pinId'],
+                        );
+                      },
+                      icon: Icon(Icons.location_pin),
+                      label: Text("ดูตำแหน่งบนแผนที่"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
                 Divider(height: 32, color: Colors.grey),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
@@ -118,18 +150,19 @@ class _ForumViewPageState extends State<ForumViewPage> {
                       if (!snapshot.hasData) {
                         return Center(child: CircularProgressIndicator());
                       }
+
                       final comments = snapshot.data!.docs;
                       return ListView.builder(
                         itemCount: comments.length,
                         itemBuilder: (context, index) {
                           final comment = comments[index];
                           return ListTile(
-                            title: Text(comment['username']),
+                            title: Text(comment['username'] ?? ''),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(comment['content']),
-                                if (comment['imageUrl'] != null)
+                                Text(comment['content'] ?? ''),
+                                if ((comment['imageUrl'] ?? '').isNotEmpty)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Image.network(comment['imageUrl']),
@@ -138,7 +171,8 @@ class _ForumViewPageState extends State<ForumViewPage> {
                             ),
                             trailing: Text(
                               comment['timestamp']?.toDate().toString() ?? '',
-                              style: TextStyle(fontSize: 10, color: Colors.grey),
+                              style:
+                                  TextStyle(fontSize: 10, color: Colors.grey),
                             ),
                           );
                         },
@@ -155,7 +189,8 @@ class _ForumViewPageState extends State<ForumViewPage> {
                     Expanded(
                       child: TextField(
                         controller: _commentController,
-                        decoration: InputDecoration(hintText: 'Add a comment...'),
+                        decoration:
+                            InputDecoration(hintText: 'Add a comment...'),
                       ),
                     ),
                     IconButton(

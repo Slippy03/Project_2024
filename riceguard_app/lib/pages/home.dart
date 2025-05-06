@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
-class HomePage extends StatelessWidget {  // ✅ เปลี่ยนจาก Stateful เป็น Stateless
+class HomePage extends StatelessWidget {
+  final Function(int) onMenuTap;
+
+  const HomePage({required this.onMenuTap});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +33,7 @@ class HomePage extends StatelessWidget {  // ✅ เปลี่ยนจาก 
               'ระบบ Forum สำหรับแลกเปลี่ยนข้อมูล',
               'assets/images/mail-box.png',
               () {
-                Navigator.of(context).pushNamed('/forum'); 
+                onMenuTap(1); // สลับไปหน้า Forum
               },
             ),
             _buildMenuItem(
@@ -53,7 +57,9 @@ class HomePage extends StatelessWidget {  // ✅ เปลี่ยนจาก 
               'สำรวจบริเวณที่เกิดโรค',
               'assets/images/maps.png',
               () {
-                // ไปที่หน้าสำรวจ
+                {
+                Navigator.of(context).pushNamed('/googlemap'); 
+              }
               },
             ),
             _buildMenuItem(
