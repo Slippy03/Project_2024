@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'navbar.dart';  
+import 'navbar.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -7,7 +7,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;  
+  int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage> {
               'ตรวจสอบโรคของข้าวด้วยกล้อง',
               'assets/images/camera.png',
               () {
-                // ไปที่หน้ากล้อง
+                Navigator.of(context).pushNamed('/camera');
               },
             ),
             _buildMenuItem(
@@ -55,7 +55,8 @@ class _HomePageState extends State<HomePage> {
               'ระบบ Forum สำหรับแลกเปลี่ยนข้อมูล',
               'assets/images/mail-box.png',
               () {
-                Navigator.of(context).pushNamed('/forum'); // Navigate to ForumPage
+                Navigator.of(context)
+                    .pushNamed('/forum'); // Navigate to ForumPage
               },
             ),
             _buildMenuItem(
@@ -71,7 +72,7 @@ class _HomePageState extends State<HomePage> {
               '5 โรคที่พบบ่อยในข้าว',
               'assets/images/virus.png',
               () {
-                // ไปที่หน้าโรคที่พบบ่อย
+                 Navigator.of(context).pushNamed('/info');
               },
             ),
             _buildMenuItem(
@@ -87,15 +88,15 @@ class _HomePageState extends State<HomePage> {
               'การตั้งค่า / Settings',
               'assets/images/settings.png',
               () {
-                // ไปที่หน้าการตั้งค่า
+                Navigator.of(context).pushNamed('/history');
               },
             ),
           ],
         ),
       ),
       bottomNavigationBar: MyBottomNavBar(
-        currentIndex: _selectedIndex, 
-        onTap: _onItemTapped, 
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }

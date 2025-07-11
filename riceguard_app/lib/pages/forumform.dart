@@ -5,12 +5,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 class ForumFormPage extends StatefulWidget {
   final String? initialTitle;
   final String? initialContent;
-  final String? pinId; // ✅ เพิ่ม pinId
+  final String? pinId;
 
   const ForumFormPage({
     this.initialTitle,
     this.initialContent,
-    this.pinId, // ✅ รองรับ pinId
+    this.pinId,
     Key? key,
   }) : super(key: key);
 
@@ -38,7 +38,6 @@ class _ForumFormPageState extends State<ForumFormPage> {
     super.dispose();
   }
 
-  // ดึงชื่อผู้ใช้จาก Firestore
   Future<String> _getUsername(String uid) async {
     try {
       DocumentSnapshot userDoc =

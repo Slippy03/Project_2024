@@ -15,13 +15,18 @@ class ApiService {
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
 
-        return "Predicted Class: ${result['predicted_class']}\n"
-            "Confidence Score: ${result['confidence_score']}\n"
-            "Warning: ${result['warning']}\n"
-            "Top2 = ${result['top2_n_predictions']}\n"
-            "Top3 = ${result['top3_n_predictions']}\n";
-            
-            
+        double confidenceScore =
+            double.parse(result['confidence_score'].replaceAll('%', ''));
+
+        if (confidenceScore >= 80) {
+          return "Confidence Score: ${result['confidence_score']}\n"
+              "Predicted Class: ${result['predicted_class']}\n"
+              "Top2 = ${result['top2_n_predictions']}\n"
+              "Top3 = ${result['top3_n_predictions']}\n";
+        } else {
+          return "Confidence Score: ${result['confidence_score']}\n"
+              "Prediction confidence is below threshold";
+        }
       } else {
         return "Error: ${response.body}";
       }

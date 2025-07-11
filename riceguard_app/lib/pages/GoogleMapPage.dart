@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'package:intl/intl.dart';
+import 'package:riceguard_app/pages/forumview.dart';
+import 'package:http/http.dart' as http;
 import 'forumform.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class GoogleMapPage extends StatefulWidget {
   final String? initialPinId;
@@ -23,16 +27,75 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   LatLng? _currentLocation;
   String? _lastTappedMarkerId;
   bool _dialogOpen = false;
+  bool _hasReceivedArguments = false;
+  bool _hasLoadedMarkers = false;
 
   final CameraPosition _initialPosition = CameraPosition(
     target: LatLng(13.736717, 100.523186),
     zoom: 10,
   );
 
+  String? description;
+  String? imageUrl;
+
   @override
-  void initState() {
-    super.initState();
-    _loadMarkers();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_hasReceivedArguments) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+
+      if (args != null) {
+        if (args is Map<String, dynamic>) {
+          description = args['description'];
+          imageUrl = args['imageUrl'];
+
+          final pinId = args['pinId'] as String?;
+          if (!_hasLoadedMarkers && pinId != null) {
+            _loadMarkers();
+            _hasLoadedMarkers = true;
+          }
+
+          final hasDescription = description != null && description!.isNotEmpty;
+          final hasImageUrl = imageUrl != null && imageUrl!.isNotEmpty;
+
+          if (hasDescription && hasImageUrl) {
+            _getCurrentLocation().then((_) {
+              if (_currentLocation != null) {
+                _showPinDialog(
+                  _currentLocation!,
+                  initialDescription: description,
+                  initialImageUrl: imageUrl,
+                );
+              }
+            });
+          }
+        } else if (args is String) {
+          final pinId = args;
+          if (!_hasLoadedMarkers && pinId.isNotEmpty) {
+            _loadMarkers();
+            _hasLoadedMarkers = true;
+          }
+        }
+      }
+
+      _hasReceivedArguments = true;
+    }
+  }
+
+  Future<XFile?> _downloadImageFromUrl(String imageUrl) async {
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode == 200) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/downloaded_image.jpg');
+        await file.writeAsBytes(response.bodyBytes);
+        return XFile(file.path);
+      }
+    } catch (e) {
+      print('Error downloading image: $e');
+    }
+    return null;
   }
 
   Future<void> _moveToCoordinates(String latitude, String longitude) async {
@@ -184,7 +247,6 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       _currentLocation = LatLng(position.latitude, position.longitude);
     });
 
-    // ignore: unnecessary_null_comparison
     if (_mapController != null && _currentLocation != null) {
       _mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
     }
@@ -288,7 +350,10 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
 
     if (data == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("ไม่พบข้อมูลหมุดนี้")),
+        SnackBar(
+          content: Text("ไม่พบข้อมูลหมุดนี้"),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
@@ -302,7 +367,10 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
 
     if (marker == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("ไม่พบหมุดบนแผนที่")),
+        SnackBar(
+          content: Text("ไม่พบหมุดบนแผนที่"),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
@@ -318,7 +386,6 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       isFavorited = favDoc.exists;
     }
 
-    // กำหนด status icon และสี
     String status = data['status'] ?? 'Unknown';
     IconData statusIcon = Icons.help_outline;
     Color statusColor = Colors.grey;
@@ -337,7 +404,6 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       statusColor = Colors.redAccent;
     }
 
-    // แสดง dialog
     showDialog(
       context: context,
       builder: (context) {
@@ -345,73 +411,88 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
           builder: (context, setState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
+                borderRadius: BorderRadius.circular(20),
+              ),
               titlePadding: EdgeInsets.fromLTRB(20, 20, 10, 0),
               contentPadding:
                   EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               actionsPadding: EdgeInsets.only(right: 10, bottom: 10),
               title: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Text(
                       title,
                       style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo[800],
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Column(
+                  Row(
                     children: [
-                      IconButton(
-                        tooltip: "Add to Favorites",
-                        icon: Icon(
-                          isFavorited ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorited ? Colors.red : Colors.grey,
-                        ),
-                        onPressed: () async {
-                          if (uid == null) return;
+                      Tooltip(
+                        message: isFavorited
+                            ? "remove from favorites"
+                            : "add to favorites",
+                        child: IconButton(
+                          icon: Icon(
+                            isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: isFavorited
+                                ? Colors.redAccent
+                                : Colors.grey[500],
+                            size: 24,
+                          ),
+                          onPressed: () async {
+                            if (uid == null) return;
+                            final favRef = FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(uid)
+                                .collection('favorites')
+                                .doc(markerId);
 
-                          final favRef = FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(uid)
-                              .collection('favorites')
-                              .doc(markerId);
+                            if (isFavorited) {
+                              await favRef.delete();
+                            } else {
+                              await favRef.set({
+                                'favoritedAt': FieldValue.serverTimestamp(),
+                                'title': title,
+                                'createdBy': username,
+                                'lat': marker!.position.latitude,
+                                'lng': marker.position.longitude,
+                              });
+                            }
 
-                          if (isFavorited) {
-                            await favRef.delete();
-                          } else {
-                            await favRef.set({
-                              'favoritedAt': FieldValue.serverTimestamp(),
-                              'title': title,
-                              'createdBy': username,
-                              'lat': marker!.position.latitude,
-                              'lng': marker.position.longitude,
+                            setState(() {
+                              isFavorited = !isFavorited;
                             });
-                          }
-
-                          setState(() {
-                            isFavorited = !isFavorited;
-                          });
-                        },
+                          },
+                        ),
                       ),
-                      IconButton(
-                        tooltip: "สร้างกระทู้จาก Pin",
-                        icon: Icon(Icons.forum, color: Colors.blueAccent),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ForumFormPage(
-                                initialTitle: title,
-                                initialContent:
-                                    "$description\n\n[Status: $status]",
-                                pinId: markerId,
+                      Tooltip(
+                        message: "สร้างกระทู้จากหมุดนี้",
+                        child: IconButton(
+                          icon: Icon(Icons.forum,
+                              color: Colors.indigo[600], size: 24),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ForumFormPage(
+                                  initialTitle: title,
+                                  initialContent:
+                                      "$description\n\n[Status: $status]",
+                                  pinId: markerId,
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -425,13 +506,26 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                         (data['imageUrl'] as String).isNotEmpty)
                       Container(
                         constraints: BoxConstraints(maxHeight: 200),
+                        margin: EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 6,
+                              spreadRadius: 2,
+                              offset: Offset(0, 3),
+                            )
+                          ],
+                        ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.network(data['imageUrl'],
-                              fit: BoxFit.cover),
+                          child: Image.network(
+                            data['imageUrl'],
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    SizedBox(height: 16),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -445,8 +539,9 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                                 TextSpan(
                                   text: "Description:\n",
                                   style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
                                 ),
                                 TextSpan(
                                   text: description,
@@ -469,12 +564,16 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                               TextSpan(
                                 text: "Pin by: ",
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 15),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                               TextSpan(
                                 text: username,
                                 style: TextStyle(
-                                    fontStyle: FontStyle.italic, fontSize: 15),
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 15,
+                                ),
                               ),
                             ],
                           ),
@@ -493,19 +592,152 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                                 TextSpan(
                                   text: "Status: ",
                                   style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
                                 ),
                                 TextSpan(
                                   text: status,
                                   style: TextStyle(
-                                      fontSize: 15, color: statusColor),
+                                    fontSize: 15,
+                                    color: statusColor,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         ),
                       ],
+                    ),
+                    SizedBox(height: 24),
+                    Text(
+                      "Pin forum",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('forums')
+                          .where('pinId', isEqualTo: markerId)
+                          .get(),
+                      builder: (context, forumSnapshot) {
+                        if (forumSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+
+                        if (!forumSnapshot.hasData ||
+                            forumSnapshot.data!.docs.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 12.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.forum_outlined, color: Colors.grey),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "No forum about this pin",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final forumDocs = forumSnapshot.data!.docs;
+                        return Column(
+                          children: forumDocs.map((doc) {
+                            final forumData =
+                                doc.data() as Map<String, dynamic>;
+                            final title = forumData['title'] ?? 'No Title';
+                            final username = forumData['username'] ?? 'Unknown';
+
+                            // ใช้ timestamp จาก Firestore
+                            final createdAt =
+                                (forumData['timestamp'] as Timestamp?)
+                                    ?.toDate();
+                            final formattedDate = createdAt != null
+                                ? DateFormat('d MMM yyyy')
+                                    .format(createdAt) // e.g. 2 Apr 2025
+                                : '';
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Material(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                elevation: 2,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ForumViewPage(),
+                                        settings:
+                                            RouteSettings(arguments: doc.id),
+                                      ),
+                                    );
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 22,
+                                          backgroundColor:
+                                              Colors.indigo.withOpacity(0.1),
+                                          child: Icon(Icons.forum,
+                                              color: Colors.indigo, size: 20),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                title,
+                                                style: TextStyle(
+                                                  fontSize: 15.5,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black87,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                'by $username${formattedDate.isNotEmpty ? ' - $formattedDate' : ''}',
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  color: Colors.grey[700],
+                                                  fontStyle: FontStyle.italic,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Icon(Icons.chevron_right,
+                                            color: Colors.grey[500]),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -515,9 +747,11 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                   onPressed: () => Navigator.pop(context),
                   icon: Icon(Icons.close, color: Colors.redAccent),
                   label: Text(
-                    "Close",
+                    "close",
                     style: TextStyle(
-                        color: Colors.redAccent, fontWeight: FontWeight.bold),
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -530,8 +764,22 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
 
   Future<void> _showFavoritePins() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null || _currentLocation == null) return;
 
+    if (user == null) return;
+
+    // เช็คว่า _currentLocation มีค่าหรือยัง ถ้าไม่มีให้เรียก _getCurrentLocation
+    if (_currentLocation == null) {
+      await _getCurrentLocation();
+      // ถ้า _currentLocation ยังเป็น null หลังจากเรียก _getCurrentLocation, แสดงข้อความเตือน
+      if (_currentLocation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Unable to get current location.")),
+        );
+        return;
+      }
+    }
+
+    // ถ้า _currentLocation มีค่าแล้ว ให้ทำการโหลดข้อมูล favorite
     try {
       final current = _currentLocation!;
       QuerySnapshot favSnapshot = await FirebaseFirestore.instance
@@ -569,8 +817,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
         builder: (context) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(20), // ปรับมุมของ dialog ให้มน
+              borderRadius: BorderRadius.circular(20),
             ),
             title: Text(
               "❤️ Favorite Pins",
@@ -604,8 +851,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                           child: Card(
                             margin: EdgeInsets.symmetric(vertical: 6),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(12), // ปรับมุมให้มน
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 5,
                             child: Padding(
@@ -654,10 +900,21 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
 
   Future<void> _showMyPins() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null || _currentLocation == null) return;
+    if (user == null) return;
+
+    if (_currentLocation == null) {
+      await _getCurrentLocation();
+      if (_currentLocation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Unable to get current location.")),
+        );
+        return;
+      }
+    }
 
     try {
-      final current = _currentLocation!;
+      final current =
+          _currentLocation!; // ใช้ _currentLocation ที่ได้รับการตั้งค่าแล้ว
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('pins')
           .where('uid', isEqualTo: user.uid)
@@ -814,19 +1071,61 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   }
 
   Future<void> _deletePin(String pinId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please log in first!")),
+      );
+      return;
+    }
+
     try {
+      // ลบ Pin จาก `pins` collection
       await FirebaseFirestore.instance.collection('pins').doc(pinId).delete();
-      await _loadMarkers(); // <-- โหลด Marker ใหม่
+
+      // ลบ Pin จาก `favorites` ของทุกผู้ใช้
+      final usersSnapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+      for (var userDoc in usersSnapshot.docs) {
+        final favRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(userDoc.id)
+            .collection('favorites')
+            .doc(pinId);
+
+        // ลบ Pin ที่อยู่ใน favorites ของผู้ใช้
+        await favRef.delete();
+      }
+
+      final pinDoc =
+          await FirebaseFirestore.instance.collection('pins').doc(pinId).get();
+      if (pinDoc.exists && pinDoc.data()?['imageUrl'] != null) {
+        await FirebaseFirestore.instance.collection('pins').doc(pinId).update({
+          'imageUrl': FieldValue.delete(),
+        });
+      }
+
+      setState(() {
+        _loadMarkers();
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Pin deleted successfully!")),
       );
     } catch (e) {
       print("Error deleting pin: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error deleting pin.")),
+      );
     }
   }
 
-  Future<void> _editPin(String pinId, String oldTitle, String oldDescription,
-      Function(String, String) onUpdate) async {
+  Future<void> _editPin(
+    String pinId,
+    String oldTitle,
+    String oldDescription,
+    Function(String, String) onUpdate,
+  ) async {
     TextEditingController titleController =
         TextEditingController(text: oldTitle);
     TextEditingController descController =
@@ -871,7 +1170,9 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                         child: TextField(
                           controller: titleController,
                           decoration: InputDecoration(
-                              border: InputBorder.none, labelText: 'Title'),
+                            border: InputBorder.none,
+                            labelText: 'Title',
+                          ),
                         ),
                       ),
                     ),
@@ -886,8 +1187,9 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                         child: TextField(
                           controller: descController,
                           decoration: InputDecoration(
-                              border: InputBorder.none,
-                              labelText: 'Description'),
+                            border: InputBorder.none,
+                            labelText: 'Description',
+                          ),
                           maxLines: 3,
                         ),
                       ),
@@ -982,6 +1284,8 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                             'title': titleController.text,
                             'description': descController.text,
                             'status': selectedStatus,
+                            'lastUpdated': FieldValue
+                                .serverTimestamp(), // ✅ บันทึกเวลาที่แก้ไขล่าสุด
                           };
 
                           if (selectedImage != null) {
@@ -990,6 +1294,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                                 .child('pin_images')
                                 .child(pinId)
                                 .child('pin_image.jpg');
+
                             await ref.putFile(File(selectedImage!.path));
                             String imageUrl = await ref.getDownloadURL();
                             updateData['imageUrl'] = imageUrl;
@@ -1039,16 +1344,17 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     _showPinDialog(_currentLocation!);
   }
 
-  Future<void> _showPinDialog(LatLng position) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Please log in first!")));
-      return;
-    }
+  Future<void> _showPinDialog(
+    LatLng position, {
+    String? initialTitle,
+    String? initialDescription,
+    String? initialImageUrl,
+  }) async {
+    TextEditingController titleController =
+        TextEditingController(text: initialTitle ?? '');
+    TextEditingController descriptionController =
+        TextEditingController(text: initialDescription ?? '');
 
-    TextEditingController titleController = TextEditingController();
-    TextEditingController descriptionController = TextEditingController();
     XFile? selectedImage;
     String selectedStatus = '🧬 Disease recently discovered';
 
@@ -1058,6 +1364,11 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
       '✅ Successfully cured disease',
       '⚠️ Still encountering disease',
     ];
+
+    // 🔽 หากมี imageUrl ให้แปลงเป็น XFile
+    if (initialImageUrl != null) {
+      selectedImage = await _downloadImageFromUrl(initialImageUrl);
+    }
 
     showDialog(
       context: context,
@@ -1104,8 +1415,6 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                       ),
                     ),
                     SizedBox(height: 16),
-
-                    /// ✅ Dropdown ที่ไม่ล้น
                     ConstrainedBox(
                       constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.85,
@@ -1122,11 +1431,9 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                         items: statusOptions.map((status) {
                           return DropdownMenuItem(
                             value: status,
-                            child: Text(
-                              status,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 15),
-                            ),
+                            child: Text(status,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 15)),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -1138,19 +1445,19 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                         },
                       ),
                     ),
-
                     SizedBox(height: 16),
+
+                    // 🔽 แสดงภาพถ้ามี selectedImage แล้ว
                     if (selectedImage != null)
                       Container(
                         constraints: BoxConstraints(maxHeight: 200),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.file(
-                            File(selectedImage!.path),
-                            fit: BoxFit.cover,
-                          ),
+                          child: Image.file(File(selectedImage!.path),
+                              fit: BoxFit.cover),
                         ),
                       ),
+
                     SizedBox(height: 10),
                     ElevatedButton.icon(
                       onPressed: () async {
@@ -1213,7 +1520,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     String title,
     String description,
     XFile? imageFile,
-    String status, // ✅ เพิ่มพารามิเตอร์
+    String status,
   ) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -1241,6 +1548,8 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
         imageUrl = await ref.getDownloadURL();
       }
 
+      final now = Timestamp.now();
+
       await pinRef.set({
         'lat': position.latitude,
         'lng': position.longitude,
@@ -1249,7 +1558,9 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
         'uid': user.uid,
         'username': userDoc['username'],
         'imageUrl': imageUrl,
-        'status': status, // ✅ บันทึกลง Firestore
+        'status': status,
+        'createdAt': now,
+        'lastUpdated': now,
       });
 
       await _loadMarkers();

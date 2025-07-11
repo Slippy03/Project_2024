@@ -10,6 +10,8 @@ import 'pages/forumform.dart';
 import 'pages/profile.dart';
 import 'pages/PredictScreeen.dart';
 import 'pages/GoogleMapPage.dart';
+import 'pages/history.dart';
+import 'pages/info.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +33,7 @@ class RiceGuardApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => LoginPage(),
+        '/info': (context) => infopage(),
         '/home': (context) => HomePage(),
         '/forum': (context) => ForumPage(),
         '/camera': (context) => PredictScreeen(),
@@ -38,6 +41,7 @@ class RiceGuardApp extends StatelessWidget {
         '/forumview': (context) => ForumViewPage(),
         '/profile': (context) => ProfilePage(),
         '/googlemap': (context) => GoogleMapPage(),
+        '/history': (context) => HistoryPage(),
         '/map_from_forum': (context) {
           final pinId = ModalRoute.of(context)?.settings.arguments as String?;
           return GoogleMapPage(initialPinId: pinId);

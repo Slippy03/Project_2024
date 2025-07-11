@@ -119,23 +119,50 @@ class _ForumViewPageState extends State<ForumViewPage> {
                 Text('โดย ${data['username'] ?? 'Unknown'}',
                     style: TextStyle(fontSize: 12, color: Colors.grey)),
                 if (hasPin)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/map_from_forum',
-                          arguments: data['pinId'],
+                  FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection('pins')
+                        .doc(data['pinId'])
+                        .get(),
+                    builder: (context, pinSnapshot) {
+                      if (pinSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: CircularProgressIndicator(),
                         );
-                      },
-                      icon: Icon(Icons.location_pin),
-                      label: Text("ดูตำแหน่งบนแผนที่"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
+                      }
+
+                      if (!pinSnapshot.hasData || !pinSnapshot.data!.exists) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            "ตำแหน่งนี้ถูกลบแล้ว",
+                            style: TextStyle(
+                                color: Colors.red, fontStyle: FontStyle.italic),
+                          ),
+                        );
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/map_from_forum',
+                              arguments: data['pinId'],
+                            );
+                          },
+                          icon: Icon(Icons.location_pin),
+                          label: Text("ดูตำแหน่งบนแผนที่"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 Divider(height: 32, color: Colors.grey),
                 Expanded(
