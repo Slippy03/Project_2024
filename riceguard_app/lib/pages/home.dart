@@ -33,7 +33,9 @@ class HomePage extends StatelessWidget {
               'ระบบ Forum สำหรับแลกเปลี่ยนข้อมูล',
               'assets/images/mail-box.png',
               () {
-                onMenuTap(1); // สลับไปหน้า Forum
+                 {
+                Navigator.of(context).pushNamed('/forum'); 
+              }
               },
             ),
             _buildMenuItem(
@@ -64,10 +66,12 @@ class HomePage extends StatelessWidget {
             ),
             _buildMenuItem(
               context,
-              'การตั้งค่า / Settings',
-              'assets/images/settings.png',
+              'ประวัติการรักษาโรค',
+              'assets/images/document.png',
               () {
-                // ไปที่หน้าการตั้งค่า
+                {
+                Navigator.of(context).pushNamed('/history');
+              }
               },
             ),
           ],

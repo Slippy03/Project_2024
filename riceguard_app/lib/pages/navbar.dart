@@ -17,10 +17,6 @@ class MyBottomNavBar extends StatelessWidget {
           label: 'Home', 
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.forum),
-          label: 'Notification',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'Profile',
         ),
@@ -33,10 +29,10 @@ class MyBottomNavBar extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
-        if (index == 3) {  
+        if (index == 2) {  
           _showLogoutDialog(context);
         } else {
-          onTap(index); // อัปเดต index แทนการใช้ Navigator
+          onTap(index); 
         }
       },
     );

@@ -79,6 +79,7 @@ flutter:
    - assets/images/virus.png
    - assets/images/user.png
    - assets/images/maps.png
+   - assets/images/document.png
    
   
   # An image asset can refer to one or more resolution-specific "variants", see

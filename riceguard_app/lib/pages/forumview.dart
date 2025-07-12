@@ -14,6 +14,7 @@ class _ForumViewPageState extends State<ForumViewPage> {
   final TextEditingController _commentController = TextEditingController();
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  bool _isFollowing = false;
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -24,14 +25,11 @@ class _ForumViewPageState extends State<ForumViewPage> {
     }
   }
 
-  Future<String?> _uploadImage(
-      File imageFile, String forumId, User currentUser) async {
+  Future<String?> _uploadImage(File imageFile, String id, User currentUser) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      String filePath =
-          'forums/$forumId/comments/${currentUser.uid}_$timestamp.jpg';
-      TaskSnapshot snapshot =
-          await FirebaseStorage.instance.ref(filePath).putFile(imageFile);
+      String filePath = 'forums/$id/comments/${currentUser.uid}_$timestamp.jpg';
+      TaskSnapshot snapshot = await FirebaseStorage.instance.ref(filePath).putFile(imageFile);
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
       print("Error uploading image: $e");
@@ -39,7 +37,7 @@ class _ForumViewPageState extends State<ForumViewPage> {
     }
   }
 
-  Future<void> _postComment(String forumId) async {
+  Future<void> _postComment(String id) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null || _commentController.text.isEmpty) return;
 
@@ -51,12 +49,12 @@ class _ForumViewPageState extends State<ForumViewPage> {
 
     String? imageUrl;
     if (_imageFile != null) {
-      imageUrl = await _uploadImage(_imageFile!, forumId, currentUser);
+      imageUrl = await _uploadImage(_imageFile!, id, currentUser);
     }
 
     await FirebaseFirestore.instance
         .collection('forums')
-        .doc(forumId)
+        .doc(id)
         .collection('comments')
         .add({
       'username': username,
@@ -71,6 +69,63 @@ class _ForumViewPageState extends State<ForumViewPage> {
     });
   }
 
+  Future<void> _toggleFollow(String id) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    final followerRef = FirebaseFirestore.instance
+        .collection('forums')
+        .doc(id)
+        .collection('follower')
+        .doc(currentUser.uid);
+
+    final doc = await followerRef.get();
+    if (doc.exists) {
+      await followerRef.delete();
+      setState(() {
+        _isFollowing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('เลิกติดตามกระทู้แล้ว'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      await followerRef.set({
+        'uid': currentUser.uid,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      setState(() {
+        _isFollowing = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ติดตามกระทู้เรียบร้อย'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _checkFollowing(String id) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('forums')
+        .doc(id)
+        .collection('follower')
+        .doc(currentUser.uid)
+        .get();
+
+    setState(() {
+      _isFollowing = doc.exists;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments;
@@ -80,44 +135,78 @@ class _ForumViewPageState extends State<ForumViewPage> {
         body: Center(child: Text("Forum ID is missing")),
       );
     }
-    final String forumId = args;
+    final String id = args;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Forum Details'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future:
-            FirebaseFirestore.instance.collection('forums').doc(forumId).get(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('forums').doc(id).get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Scaffold(
+            appBar: AppBar(title: Text("Forum Details")),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-          final forumDoc = snapshot.data!;
-          final data = forumDoc.data() as Map<String, dynamic>;
-          final hasPin = data.containsKey('pinId') &&
-              (data['pinId']?.toString().isNotEmpty ?? false);
+        final forumDoc = snapshot.data!;
+        final data = forumDoc.data() as Map<String, dynamic>;
+        final hasPin = data.containsKey('pinId') &&
+            (data['pinId']?.toString().isNotEmpty ?? false);
+        final ownerId = data['uid'];
 
-          return Padding(
+        if (FirebaseAuth.instance.currentUser?.uid != ownerId) {
+          _checkFollowing(id);
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Forum Details'),
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            actions: [
+              if (FirebaseAuth.instance.currentUser?.uid != ownerId)
+                IconButton(
+                  icon: Icon(
+                    _isFollowing ? Icons.favorite : Icons.favorite_border,
+                    color: _isFollowing ? Colors.red : Colors.white,
+                  ),
+                  onPressed: () => _toggleFollow(id),
+                ),
+              if (FirebaseAuth.instance.currentUser?.uid == ownerId)
+                IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/forumedit',
+                      arguments: id,
+                    );
+                  },
+                ),
+            ],
+          ),
+          body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   data['title'] ?? '',
-                  style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.lightGreen),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.lightGreen),
                 ),
                 SizedBox(height: 16),
                 Text(data['content'] ?? '', style: TextStyle(fontSize: 16)),
+                
+                if ((data['imageUrl'] ?? '').toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: Image.network(
+                      data['imageUrl'],
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+
                 SizedBox(height: 16),
-                Text('โดย ${data['username'] ?? 'Unknown'}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('โดย ${data['username'] ?? 'Unknown'}', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 if (hasPin)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -142,7 +231,7 @@ class _ForumViewPageState extends State<ForumViewPage> {
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('forums')
-                        .doc(forumId)
+                        .doc(id)
                         .collection('comments')
                         .orderBy('timestamp', descending: true)
                         .snapshots(),
@@ -171,8 +260,7 @@ class _ForumViewPageState extends State<ForumViewPage> {
                             ),
                             trailing: Text(
                               comment['timestamp']?.toDate().toString() ?? '',
-                              style:
-                                  TextStyle(fontSize: 10, color: Colors.grey),
+                              style: TextStyle(fontSize: 10, color: Colors.grey),
                             ),
                           );
                         },
@@ -189,13 +277,12 @@ class _ForumViewPageState extends State<ForumViewPage> {
                     Expanded(
                       child: TextField(
                         controller: _commentController,
-                        decoration:
-                            InputDecoration(hintText: 'Add a comment...'),
+                        decoration: InputDecoration(hintText: 'Add a comment...'),
                       ),
                     ),
                     IconButton(
                       icon: Icon(Icons.add, color: Colors.green),
-                      onPressed: () => _postComment(forumId),
+                      onPressed: () => _postComment(id),
                     ),
                   ],
                 ),
@@ -219,9 +306,9 @@ class _ForumViewPageState extends State<ForumViewPage> {
                   ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
