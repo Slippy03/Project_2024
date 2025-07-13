@@ -25,7 +25,7 @@ class HomePage extends StatelessWidget {
               'ตรวจสอบโรคของข้าวด้วยกล้อง',
               'assets/images/camera.png',
               () {
-                // ไปที่หน้ากล้อง
+                Navigator.of(context).pushNamed('/camera');
               },
             ),
             _buildMenuItem(
@@ -51,7 +51,7 @@ class HomePage extends StatelessWidget {
               '5 โรคที่พบบ่อยในข้าว',
               'assets/images/virus.png',
               () {
-                // ไปที่หน้าโรคที่พบบ่อย
+                 Navigator.of(context).pushNamed('/info');
               },
             ),
             _buildMenuItem(

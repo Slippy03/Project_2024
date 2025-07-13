@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน"),
-          backgroundColor: Colors.red, // Set background to red
+          backgroundColor: Colors.red,
         ),
       );
     }
@@ -93,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
                 Column(
                   children: [
                     Image.asset(
-                      'assets/images/farmer.png', 
+                      'assets/images/farmer.png',
                       height: 100,
                     ),
                     Text(
@@ -166,9 +166,8 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: _loginUser,
                         child: Text('Login'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white                         
-                        ),
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white),
                       ),
                       SizedBox(height: 10),
                       GestureDetector(
@@ -181,8 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                         },
                         child: RichText(
                           text: TextSpan(
-                            text:
-                                "If you do not have an account, please ",
+                            text: "If you do not have an account, please ",
                             style: TextStyle(color: Colors.black),
                             children: <TextSpan>[
                               TextSpan(
