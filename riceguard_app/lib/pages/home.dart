@@ -40,15 +40,7 @@ class HomePage extends StatelessWidget {
             ),
             _buildMenuItem(
               context,
-              'วิธีการรักษาโรคของข้าว',
-              'assets/images/cure.png',
-              () {
-                // ไปที่หน้าการรักษาโรค
-              },
-            ),
-            _buildMenuItem(
-              context,
-              '5 โรคที่พบบ่อยในข้าว',
+              'องค์ความรู้โรคข้าว',
               'assets/images/virus.png',
               () {
                  Navigator.of(context).pushNamed('/info');

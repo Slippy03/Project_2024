@@ -7,7 +7,9 @@ class infopage extends StatelessWidget {
       title: 'องค์ความรู้โรคใบข้าว',
       theme: ThemeData(primarySwatch: Colors.green),
       home: DiseaseListPage(),
+      debugShowCheckedModeBanner: false,
     );
+
   }
 }
 
@@ -82,11 +84,15 @@ final List<Disease> diseases = [
   ),
 ];
 
+
 class DiseaseListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('องค์ความรู้โรคใบข้าว')),
+      appBar: AppBar(title: Text('องค์ความรู้โรคใบข้าว'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
       body: ListView.builder(
         itemCount: diseases.length,
         itemBuilder: (context, index) {
@@ -120,7 +126,9 @@ class DiseaseDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(disease.name)),
+      appBar: AppBar(title: Text(disease.name),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
