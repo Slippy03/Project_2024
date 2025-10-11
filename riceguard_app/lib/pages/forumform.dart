@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ForumFormPage extends StatefulWidget {
   final String? initialTitle;
@@ -22,13 +25,13 @@ class _ForumFormPageState extends State<ForumFormPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _contentController;
+  File? _selectedImage;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.initialTitle ?? '');
-    _contentController =
-        TextEditingController(text: widget.initialContent ?? '');
+    _contentController = TextEditingController(text: widget.initialContent ?? '');
   }
 
   @override
@@ -54,6 +57,37 @@ class _ForumFormPageState extends State<ForumFormPage> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImage(String forumId, String title) async {
+    if (_selectedImage == null) return null;
+
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('forums')
+          .child(forumId)
+          .child(title);
+
+      UploadTask uploadTask = ref.putFile(_selectedImage!);
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      print("Image upload error: $e");
+      return null;
+    }
+  }
+
   Future<void> _createForum() async {
     User? user = FirebaseAuth.instance.currentUser;
 
@@ -63,15 +97,21 @@ class _ForumFormPageState extends State<ForumFormPage> {
       DocumentReference forumRef =
           FirebaseFirestore.instance.collection('forums').doc();
 
+      String forumId = forumRef.id;
+      String title = _titleController.text.trim();
+
+      String? imageUrl = await _uploadImage(forumId, title);
+
       await forumRef.set({
-        'id': forumRef.id,
-        'title': _titleController.text.trim(),
+        'id': forumId,
+        'title': title,
         'content': _contentController.text.trim(),
         'username': username,
         'timestamp': Timestamp.now(),
         'uid': user.uid,
+        if (imageUrl != null) 'imageUrl': imageUrl,
         if (widget.pinId != null && widget.pinId!.isNotEmpty)
-          'pinId': widget.pinId, // ✅ เก็บ pinId ถ้ามี
+          'pinId': widget.pinId,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,58 +133,79 @@ class _ForumFormPageState extends State<ForumFormPage> {
         padding: EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            children: [
-              if (widget.pinId != null) // ✅ แสดงข้อความว่าอิงจาก Pin
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.link, color: Colors.green),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          "โพสต์นี้เชื่อมกับตำแหน่งบนแผนที่ (Pin ID: ${widget.pinId})",
-                          style: TextStyle(color: Colors.green[700]),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                if (widget.pinId != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.link, color: Colors.green),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            "โพสต์นี้เชื่อมกับตำแหน่งบนแผนที่ (Pin ID: ${widget.pinId})",
+                            style: TextStyle(color: Colors.green[700]),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(labelText: 'หัวข้อกระทู้'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'กรุณากรอกหัวข้อกระทู้';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _contentController,
+                  decoration: InputDecoration(labelText: 'เนื้อหาของกระทู้'),
+                  maxLines: 5,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'กรุณากรอกเนื้อหาของกระทู้';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 16.0),
+                if (_selectedImage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Image.file(
+                      _selectedImage!,
+                      height: 150,
+                    ),
+                  ),
+                ElevatedButton.icon(
+                  onPressed: _pickImage,
+                  icon: Icon(Icons.image),
+                  label: Text("แนบรูปภาพ"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[700],
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(double.infinity, 48),
                   ),
                 ),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: 'หัวข้อกระทู้'),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'กรุณากรอกหัวข้อกระทู้';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16.0),
-              TextFormField(
-                controller: _contentController,
-                decoration: InputDecoration(labelText: 'เนื้อหาของกระทู้'),
-                maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'กรุณากรอกเนื้อหาของกระทู้';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 24.0),
-              ElevatedButton.icon(
-                onPressed: _createForum,
-                icon: Icon(Icons.send),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  minimumSize: Size(double.infinity, 48),
+                SizedBox(height: 24.0),
+                ElevatedButton.icon(
+                  onPressed: _createForum,
+                  icon: Icon(Icons.send),
+                  label: Text('สร้างกระทู้'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(double.infinity, 48),
+                  ),
                 ),
-                label: Text('สร้างกระทู้'),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

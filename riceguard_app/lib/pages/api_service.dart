@@ -19,13 +19,14 @@ class ApiService {
             double.parse(result['confidence_score'].replaceAll('%', ''));
 
         if (confidenceScore >= 80) {
-          return "Confidence Score: ${result['confidence_score']}\n"
-              "Predicted Class: ${result['predicted_class']}\n"
-              "Top2 = ${result['top2_n_predictions']}\n"
-              "Top3 = ${result['top3_n_predictions']}\n";
+          return "มีโอกาศที่อาจจะเป็นโรคตามลําดังนี้ : "
+              " 1). ${result['predicted_class']}\n"
+              " 2). ${result['top2_n_predictions']}\n"
+              " 3). ${result['top3_n_predictions']}\n"
+              "โปรดศึกษาข้อมูลเพิ่มเติมจากแหล่งอื่นเพื่อประกอบการตัดสินใจ\n";
         } else {
           return "Confidence Score: ${result['confidence_score']}\n"
-              "Prediction confidence is below threshold";
+              "ไม่สามารถประเมินโรคจากรูปภาพได้เนื่องจากความมันใจไม่เพียงพอ";
         }
       } else {
         return "Error: ${response.body}";
