@@ -39,6 +39,12 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
   String? imageUrl;
 
   @override
+  void initState() {
+    super.initState();
+    _loadMarkers();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
@@ -1718,6 +1724,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             initialCameraPosition: _initialPosition,
             onMapCreated: (GoogleMapController controller) {
               _mapController = controller;
+              _loadMarkers();
             },
             mapType: MapType.normal,
             markers: _markers,

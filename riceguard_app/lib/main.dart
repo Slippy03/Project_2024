@@ -14,6 +14,7 @@ import 'pages/GoogleMapPage.dart';
 import 'pages/mainscreen.dart';
 import 'pages/forumedit.dart';
 import 'pages/info.dart';
+import 'pages/forumedit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,28 +28,29 @@ class RiceGuardApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'RiceGuard',
-        theme: ThemeData(
-          primarySwatch: Colors.green,
-        ),
-        debugShowCheckedModeBanner: false,
-        home: LoginPage(),
-        routes: {
-          '/login': (context) => LoginPage(),
-          '/forumview': (context) => ForumViewPage(),
-          '/forumform': (context) => ForumFormPage(),
-          '/profile': (context) => ProfilePage(),
-          '/googlemap': (context) => GoogleMapPage(),
-          '/history': (context) => HistoryPage(),
-          '/forumedit': (context) => ForumEditPage(),
-          '/mainscreen': (context) => MainScreen(),
-          '/forum': (context) => ForumPage(),
-          '/info': (context) => infopage(),
-          '/camera': (context) => PredictScreeen(),
-          '/map_from_forum': (context) {
-            final pinId = ModalRoute.of(context)?.settings.arguments as String?;
-            return GoogleMapPage(initialPinId: pinId);
-          },
-        });
+      title: 'RiceGuard',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+      ),
+      debugShowCheckedModeBanner: false,
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => LoginPage(),
+        '/info': (context) => infopage(),
+        '/forumedit': (context) => ForumEditPage(),
+        '/mainscreen': (context) => MainScreen(),
+        '/forum': (context) => ForumPage(),
+        '/camera': (context) => PredictScreeen(),
+        '/forumform': (context) => ForumFormPage(),
+        '/forumview': (context) => ForumViewPage(),
+        '/profile': (context) => ProfilePage(),
+        '/googlemap': (context) => GoogleMapPage(),
+        '/history': (context) => HistoryPage(),
+        '/map_from_forum': (context) {
+          final pinId = ModalRoute.of(context)?.settings.arguments as String?;
+          return GoogleMapPage(initialPinId: pinId);
+        },
+      },
+    );
   }
 }

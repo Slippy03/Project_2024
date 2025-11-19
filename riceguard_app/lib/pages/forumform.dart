@@ -76,7 +76,6 @@ class _ForumFormPageState extends State<ForumFormPage> {
           .ref()
           .child('forums')
           .child(forumId)
-          .child('title')
           .child(title);
 
       UploadTask uploadTask = ref.putFile(_selectedImage!);
@@ -126,87 +125,307 @@ class _ForumFormPageState extends State<ForumFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Create Forum'),
-        backgroundColor: Color.fromRGBO(134, 245, 137, 1),
+        elevation: 0,
+        title: Text(
+          'สร้างกระทู้โรคข้าว',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Color(0xFF2E7D32),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                if (widget.pinId != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.link, color: Colors.green),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            "โพสต์นี้เชื่อมกับตำแหน่งบนแผนที่ (Pin ID: ${widget.pinId})",
-                            style: TextStyle(color: Colors.green[700]),
-                          ),
-                        ),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              
+              // ----------------------
+              // PIN CARD SECTION
+              // ----------------------
+              if (widget.pinId != null && widget.pinId!.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF2E7D32).withOpacity(0.1),
+                        Color(0xFF2E7D32).withOpacity(0.05)
                       ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Color(0xFF2E7D32).withOpacity(0.3),
+                      width: 1.5,
                     ),
                   ),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(labelText: 'หัวข้อกระทู้'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'กรุณากรอกหัวข้อกระทู้';
-                    }
-                    return null;
-                  },
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: Color(0xFF2E7D32),
+                          size: 24,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "เชื่อมกับตำแหน่งนาข้าว",
+                              style: TextStyle(
+                                color: Color(0xFF2E7D32),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              "Pin ID: ${widget.pinId}",
+                              style: TextStyle(
+                                color: Color(0xFF388E3C),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 16.0),
-                TextFormField(
-                  controller: _contentController,
-                  decoration: InputDecoration(labelText: 'เนื้อหาของกระทู้'),
-                  maxLines: 5,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'กรุณากรอกเนื้อหาของกระทู้';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                if (_selectedImage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Image.file(
-                      _selectedImage!,
-                      height: 150,
+
+              // ----------------------
+              // FORM CONTENT BOX
+              // ----------------------
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
                     ),
-                  ),
-                ElevatedButton.icon(
-                  onPressed: _pickImage,
-                  icon: Icon(Icons.image),
-                  label: Text("แนบรูปภาพ"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[700],
-                    foregroundColor: Colors.white,
-                    minimumSize: Size(double.infinity, 48),
-                  ),
+                  ],
                 ),
-                SizedBox(height: 24.0),
-                ElevatedButton.icon(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    
+                    // TITLE
+                    Text(
+                      'หัวข้อกระทู้',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: 'ระบุหัวข้อที่น่าสนใจ...',
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: Colors.grey[200]!, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: Color(0xFF2E7D32), width: 2),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'กรุณากรอกหัวข้อกระทู้';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    SizedBox(height: 20),
+
+                    // CONTENT
+                    Text(
+                      'เนื้อหา',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    TextFormField(
+                      controller: _contentController,
+                      decoration: InputDecoration(
+                        hintText: 'เขียนเนื้อหาของคุณที่นี่...',
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: Colors.grey[200]!, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              BorderSide(color: Color(0xFF2E7D32), width: 2),
+                        ),
+                        contentPadding: EdgeInsets.all(16),
+                      ),
+                      maxLines: 8,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'กรุณากรอกเนื้อหาของกระทู้';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    SizedBox(height: 20),
+
+                    // IMAGE PREVIEW
+                    if (_selectedImage != null)
+                      Container(
+                        margin: EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.file(
+                                _selectedImage!,
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedImage = null;
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // IMAGE PICKER BUTTON
+                    OutlinedButton.icon(
+                      onPressed: _pickImage,
+                      icon: Icon(Icons.add_photo_alternate_outlined),
+                      label: Text(
+                        _selectedImage == null
+                            ? "เพิ่มรูปภาพ"
+                            : "เปลี่ยนรูปภาพ",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Color(0xFF2E7D32),
+                        side: BorderSide(
+                            color: Color(0xFF2E7D32).withOpacity(0.5),
+                            width: 1.5),
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 24),
+
+              // SUBMIT BUTTON
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: ElevatedButton.icon(
                   onPressed: _createForum,
-                  icon: Icon(Icons.send),
-                  label: Text('สร้างกระทู้'),
+                  icon: Icon(Icons.send_rounded, size: 22),
+                  label: Text(
+                    'สร้างกระทู้',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Color(0xFF2E7D32),
                     foregroundColor: Colors.white,
-                    minimumSize: Size(double.infinity, 48),
+                    elevation: 3,
+                    shadowColor: Color(0xFF2E7D32).withOpacity(0.5),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              SizedBox(height: 24),
+            ],
           ),
         ),
       ),
