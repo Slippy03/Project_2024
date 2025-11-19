@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart'; 
@@ -15,8 +15,6 @@ class _ProfileScreenState extends State<ProfilePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late User? currentUser;
   Map<String, dynamic>? userData;
-
-  int _currentIndex = 3; 
 
   @override
   void initState() {
@@ -66,19 +64,13 @@ class _ProfileScreenState extends State<ProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(height: 20),
-                  
                   _buildProfileHeader(),
                   SizedBox(height: 20),
-                  
                   _buildPersonalInfo(),
-                  
                   SizedBox(height: 20),
                 ],
               ),
             ),
-      
-      
-      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
@@ -162,7 +154,6 @@ class _ProfileScreenState extends State<ProfilePage> {
             'เป็นสมาชิกตั้งแต่',
             _formatTimestamp(userData!['created_at']),
           ),
-          
           SizedBox(height: 20), 
           Center(
             child: ElevatedButton(
@@ -173,7 +164,6 @@ class _ProfileScreenState extends State<ProfilePage> {
                     builder: (context) => EditProfilePage(userData: userData!),
                   ),
                 );
-
                 
                 if (updatedData != null) {
                   setState(() {
@@ -227,9 +217,5 @@ class _ProfileScreenState extends State<ProfilePage> {
     }
     DateTime date = timestamp.toDate(); 
     return DateFormat('dd / MM / yyyy').format(date); 
-  }
-
-  Widget _buildBottomNavBar() {
-    return MyBottomNavBar(currentIndex: 2, onTap: (index) {});
   }
 }

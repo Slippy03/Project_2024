@@ -17,10 +17,6 @@ class MyBottomNavBar extends StatelessWidget {
           label: 'Home', 
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.forum),
-          label: 'Notification',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'Profile',
         ),
@@ -33,21 +29,10 @@ class MyBottomNavBar extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
-        if (index == 3) {  
+        if (index == 2) {  
           _showLogoutDialog(context);
         } else {
-          switch (index) {
-            case 0: 
-              Navigator.of(context).pushReplacementNamed('/home');
-              break;
-            case 1: 
-              Navigator.of(context).pushReplacementNamed('/forum');
-              break;
-            case 2: 
-              Navigator.of(context).pushReplacementNamed('/profile');
-              break;
-          }
-          onTap(index);  
+          onTap(index); 
         }
       },
     );
@@ -63,14 +48,13 @@ class MyBottomNavBar extends StatelessWidget {
           actions: <Widget>[
             TextButton(
               child: Text('ไม่'),
-              onPressed: () {
-                Navigator.of(context).pop();  
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: Text('ใช่'),
               onPressed: () {
                 FirebaseAuth.instance.signOut();
+                Navigator.of(context).pop();  
                 Navigator.of(context).pushReplacementNamed('/login');  
               },
             ),

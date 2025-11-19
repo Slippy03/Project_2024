@@ -1,16 +1,18 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:riceguard_app/firebase_options.dart';
+import 'package:riceguard_app/pages/forum.dart';
+import 'package:riceguard_app/pages/history.dart';
 import 'package:riceguard_app/pages/forumview.dart';
 import 'package:riceguard_app/pages/navbar.dart';
 import 'pages/login.dart';
 import 'pages/home.dart';
-import 'pages/forum.dart';
 import 'pages/forumform.dart';
 import 'pages/profile.dart';
 import 'pages/PredictScreeen.dart';
 import 'pages/GoogleMapPage.dart';
-import 'pages/history.dart';
+import 'pages/mainscreen.dart';
+import 'pages/forumedit.dart';
 import 'pages/info.dart';
 import 'pages/forumedit.dart';
 

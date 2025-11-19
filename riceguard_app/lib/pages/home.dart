@@ -1,31 +1,9 @@
 import 'package:flutter/material.dart';
-import 'navbar.dart';
 
-class HomePage extends StatefulWidget {
-  @override
-  _HomePageState createState() => _HomePageState();
-}
+class HomePage extends StatelessWidget {
+  final Function(int) onMenuTap;
 
-class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.of(context).pushReplacementNamed('/home');
-        break;
-      case 1:
-        Navigator.of(context).pushReplacementNamed('/forum');
-        break;
-      case 2:
-        Navigator.of(context).pushReplacementNamed('/profile');
-        break;
-    }
-  }
+  const HomePage({required this.onMenuTap});
 
   @override
   Widget build(BuildContext context) {
@@ -55,21 +33,14 @@ class _HomePageState extends State<HomePage> {
               'ระบบ Forum สำหรับแลกเปลี่ยนข้อมูล',
               'assets/images/mail-box.png',
               () {
-                Navigator.of(context)
-                    .pushNamed('/forum'); // Navigate to ForumPage
+                 {
+                Navigator.of(context).pushNamed('/forum'); 
+              }
               },
             ),
             _buildMenuItem(
               context,
-              'วิธีการรักษาโรคของข้าว',
-              'assets/images/cure.png',
-              () {
-                // ไปที่หน้าการรักษาโรค
-              },
-            ),
-            _buildMenuItem(
-              context,
-              '5 โรคที่พบบ่อยในข้าว',
+              'องค์ความรู้โรคข้าว',
               'assets/images/virus.png',
               () {
                  Navigator.of(context).pushNamed('/info');
@@ -80,23 +51,23 @@ class _HomePageState extends State<HomePage> {
               'สำรวจบริเวณที่เกิดโรค',
               'assets/images/maps.png',
               () {
-                Navigator.of(context).pushNamed('/googlemap');
+                {
+                Navigator.of(context).pushNamed('/googlemap'); 
+              }
               },
             ),
             _buildMenuItem(
               context,
-              'การตั้งค่า / Settings',
-              'assets/images/settings.png',
+              'ประวัติการรักษาโรค',
+              'assets/images/document.png',
               () {
+                {
                 Navigator.of(context).pushNamed('/history');
+              }
               },
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: MyBottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
       ),
     );
   }

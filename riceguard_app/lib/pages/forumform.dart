@@ -191,9 +191,30 @@ class _ForumFormPageState extends State<ForumFormPage> {
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(labelText: 'หัวข้อกระทู้'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'กรุณากรอกหัวข้อกระทู้';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _contentController,
+                  decoration: InputDecoration(labelText: 'เนื้อหาของกระทู้'),
+                  maxLines: 5,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'กรุณากรอกเนื้อหาของกระทู้';
+                    }
+                    return null;
+                  },
                 ),
 
               // Form Container

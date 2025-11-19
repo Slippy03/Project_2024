@@ -46,7 +46,6 @@ class infopage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ ถ้ามีชื่อโรค ให้หาในรายการแล้ว push ไปหน้า detail ทันที หลังเฟรมแรก
     if (diseaseName != null && diseaseName!.trim().isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final targetName = _toCanonical(diseaseName!);
@@ -64,7 +63,6 @@ class infopage extends StatelessWidget {
       });
     }
 
-    // แสดงหน้ารายการความรู้เป็นค่าเริ่มต้น
     return DiseaseListPage();
   }
 }
