@@ -15,7 +15,7 @@ class PredictScreeen extends StatefulWidget {
 class _PredictScreeenState extends State<PredictScreeen> {
   File? _image;
   final ImagePicker _picker = ImagePicker();
-  String? _predictionResult;
+  Map<String, dynamic>? _predictionResult; // ✅ เปลี่ยนเป็น Map
   bool _isLoading = false;
 
   Future<void> _pickImage(ImageSource source) async {
@@ -36,8 +36,10 @@ class _PredictScreeenState extends State<PredictScreeen> {
     setState(() => _isLoading = true);
 
     try {
+      // Resize image
       File resizedImage = await _resizeImage(_image!);
 
+      // Upload to Firebase Storage
       String fileName =
           'uploads/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg';
       Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
@@ -47,27 +49,65 @@ class _PredictScreeenState extends State<PredictScreeen> {
 
       String downloadURL = await storageRef.getDownloadURL();
 
-      await _predictImage(downloadURL);
+      // Predict via API
+      final result = await _predictImage(downloadURL);
 
+      if (result == null || result['status'] == 'error') {
+        throw Exception(result?['message'] ?? 'Prediction failed');
+      }
+
+      // Save to Firestore
       await FirebaseFirestore.instance.collection('predict_History').add({
         'imageUrl': downloadURL,
-        'prediction': _predictionResult,
+        'prediction': result['predicted_class'],
+        'confidence': result['confidence_value'] / 100, // แปลงเป็น 0-1
+        'top3': result['top_3_predictions'],
         'timestamp': FieldValue.serverTimestamp(),
         'userId': user.uid,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Upload and Predict Successful!')),
-      );
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text('✅ อัปโหลดและวิเคราะห์สำเร็จ!'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green[600],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
 
+      // Clear image after success
       setState(() {
         _image = null;
       });
     } catch (e) {
       print('Upload error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Upload Failed')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text('❌ เกิดข้อผิดพลาด: ${e.toString()}'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red[600],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -84,97 +124,205 @@ class _PredictScreeenState extends State<PredictScreeen> {
     return resizedFile;
   }
 
-  Future<void> _predictImage(String imageUrl) async {
+  Future<Map<String, dynamic>?> _predictImage(String imageUrl) async {
     try {
+      // เรียก API
       final result = await ApiService.predictImage(imageUrl);
+
+      if (result == null) {
+        throw Exception('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+      }
 
       setState(() {
         _predictionResult = result;
       });
 
-      _showPredictionDialog(_predictionResult!, imageUrl);
+      // แสดง Dialog
+      _showPredictionDialog(result, imageUrl);
+
+      return result;
     } catch (e) {
       print('Prediction error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Prediction Failed')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ การวิเคราะห์ล้มเหลว: ${e.toString()}')),
+        );
+      }
+      return null;
     }
   }
 
-  void _showPredictionDialog(String predictionResult, String imageUrl) {
+  void _showPredictionDialog(Map<String, dynamic> result, String imageUrl) {
+    // จัดรูปแบบข้อความ
+    final String formattedResult = ApiService.formatPredictionResult(result);
+    final bool isSuccess = result['status'] == 'success';
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '🧠 Prediction Result',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    imageUrl,
-                    height: 200,
-                    width: 200,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  predictionResult,
-                  style: TextStyle(fontSize: 16, color: Colors.teal[700]),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 500),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text("OK"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSuccess
+                                ? Colors.green[100]
+                                : Colors.orange[100],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isSuccess ? Icons.check_circle : Icons.warning,
+                            color: isSuccess
+                                ? Colors.green[700]
+                                : Colors.orange[700],
+                            size: 28,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ผลการวิเคราะห์',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                result['confidence_score'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+
+                    // Image
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        imageUrl,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 200,
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 200,
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: Icon(Icons.broken_image,
+                                  color: Colors.grey[400], size: 50),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 20),
+
+                    // Prediction Result
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Text(
+                        formattedResult,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.6,
+                          color: Colors.grey[800],
                         ),
                       ),
                     ),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        Navigator.of(context).pop();
+                    SizedBox(height: 24),
 
-                        Navigator.pushNamed(
-                          context,
-                          '/googlemap',
-                          arguments: {
-                            'description': predictionResult,
-                            'imageUrl': imageUrl,
-                          },
-                        );
-                      },
-                      icon: const Icon(Icons.map),
-                      label: const Text("Add to Map"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    // Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            icon: Icon(Icons.close, size: 20),
+                            label: Text("ปิด"),
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              side: BorderSide(color: Colors.grey[400]!),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    )
+                        if (isSuccess) ...[
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Navigator.pushNamed(
+                                  context,
+                                  '/googlemap',
+                                  arguments: {
+                                    'description': result['predicted_class'],
+                                    'imageUrl': imageUrl,
+                                    'confidence': result['confidence_score'],
+                                    'fullResult': result,
+                                  },
+                                );
+                              },
+                              icon: Icon(Icons.map, size: 20),
+                              label: Text("เพิ่มใน Map"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[600],
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                elevation: 0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -185,24 +333,72 @@ class _PredictScreeenState extends State<PredictScreeen> {
   Widget _buildImagePreview() {
     if (_image == null) {
       return Container(
-        height: 260,
+        height: 280,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300, width: 2),
         ),
-        child: Center(
-          child: Text('🖼️ No image selected',
-              style: TextStyle(color: Colors.grey[600])),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_outlined, size: 80, color: Colors.grey[400]),
+            SizedBox(height: 16),
+            Text(
+              'ยังไม่ได้เลือกรูปภาพ',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'กรุณาเลือกรูปภาพจากแกลเลอรี่หรือถ่ายรูปใหม่',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 13,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       );
     } else {
       return Card(
-        elevation: 5,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.file(_image!,
-              height: 260, width: double.infinity, fit: BoxFit.cover),
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              Image.file(
+                _image!,
+                height: 280,
+                width: double.infinity,
+                fit: BoxFit.contain,
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.close, color: Colors.white, size: 20),
+                    onPressed: () {
+                      setState(() {
+                        _image = null;
+                        _predictionResult = null;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -211,77 +407,147 @@ class _PredictScreeenState extends State<PredictScreeen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('🌾 Upload & Predict'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.psychology, size: 24),
+            SizedBox(width: 8),
+            Text('วิเคราะห์โรคข้าว'),
+          ],
+        ),
         centerTitle: true,
+        backgroundColor: Colors.green[600],
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _buildImagePreview(),
-              const SizedBox(height: 70),
-              Row(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 600),
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo),
-                    label: const Text("Gallery"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal.shade100,
-                      foregroundColor: Colors.teal.shade800,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                  // Image Preview
+                  _buildImagePreview(),
+                  SizedBox(height: 32),
+
+                  // Instructions
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.blue[700], size: 24),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'เลือกรูปภาพใบข้าวที่มีอาการเพื่อวิเคราะห์โรค',
+                            style: TextStyle(
+                              color: Colors.blue[900],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  ElevatedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text("Camera"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange.shade100,
-                      foregroundColor: Colors.orange.shade800,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  SizedBox(height: 24),
+
+                  // Pick Image Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading
+                              ? null
+                              : () => _pickImage(ImageSource.gallery),
+                          icon: Icon(Icons.photo_library, size: 22),
+                          label: Text("แกลเลอรี่"),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(
+                                color: Colors.green[600]!, width: 1.5),
+                            foregroundColor: Colors.green[700],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading
+                              ? null
+                              : () => _pickImage(ImageSource.camera),
+                          icon: Icon(Icons.camera_alt, size: 22),
+                          label: Text("กล้อง"),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(
+                                color: Colors.orange[600]!, width: 1.5),
+                            foregroundColor: Colors.orange[700],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Upload & Predict Button
+                  ElevatedButton.icon(
+                    onPressed: (_isLoading || _image == null)
+                        ? null
+                        : _uploadAndPredictImage,
+                    icon: _isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(Icons.cloud_upload, size: 22),
+                    label: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Text(
+                        _isLoading
+                            ? 'กำลังวิเคราะห์...'
+                            : 'อัปโหลดและวิเคราะห์',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[600],
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[300],
+                      disabledForegroundColor: Colors.grey[500],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _uploadAndPredictImage,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.cloud_upload),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12.0),
-                    child: Text("Upload & Predict"),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
