@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'info.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -65,7 +66,6 @@ class _HistoryPageState extends State<HistoryPage>
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(),
-      // เพิ่ม resizeToAvoidBottomInset
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
@@ -292,7 +292,7 @@ class _HistoryPageState extends State<HistoryPage>
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.85,
+                    childAspectRatio: 0.9,
                   ),
                   itemCount: filteredDocs.length,
                   itemBuilder: (context, index) {
@@ -354,7 +354,7 @@ class _HistoryPageState extends State<HistoryPage>
     final prediction = data['prediction'] ?? 'ไม่ทราบผล';
     final confidence = data['confidence'] as double?;
     final timestamp = (data['timestamp'] as Timestamp?)?.toDate();
-    final deviceInfo = data['deviceInfo'] ?? 'ไม่ทราบอุปกรณ์';
+    final top3 = data['top3'] as List<dynamic>?;
     final isTablet = _isTablet(context);
     final isDesktop = _isDesktop(context);
 
@@ -373,125 +373,468 @@ class _HistoryPageState extends State<HistoryPage>
     return Container(
       margin: EdgeInsets.only(bottom: isDesktop ? 0 : 12),
       child: Material(
-        elevation: 3,
+        elevation: 1.5,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white, Colors.grey[50]!],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showDetailDialog(data, index),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              border: Border.all(color: Colors.grey[200]!, width: 1),
             ),
-            border: Border.all(color: Colors.grey[200]!, width: 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header - แก้ไขตรงนี้
-              Container(
-                padding: EdgeInsets.all(isTablet ? 16 : 12),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(isTablet ? 10 : 8),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(statusIcon,
-                          color: statusColor, size: isTablet ? 22 : 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image Section - Left Side
+                Hero(
+                  tag: 'history_image_$index',
+                  child: Container(
+                    width: isTablet ? 100 : 85,
+                    height: isTablet ? 100 : 85,
+                    margin: EdgeInsets.all(isTablet ? 12 : 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Stack(
                         children: [
-                          Text(
-                            prediction,
-                            style: TextStyle(
-                              fontSize: isTablet ? 16 : 14,
-                              fontWeight: FontWeight.bold,
-                              color: statusColor,
+                          imageUrl.isNotEmpty
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit
+                                      .contain, // ✅ แก้จาก cover เป็น contain
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      color: Colors.grey[200],
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    statusColor),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[200],
+                                      child: Icon(Icons.broken_image,
+                                          color: Colors.grey[400], size: 30),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  color: Colors.grey[200],
+                                  child: Icon(Icons.image,
+                                      color: Colors.grey[400], size: 30),
+                                ),
+                          // Overlay with detail icon
+                          Positioned(
+                            bottom: 4,
+                            right: 4,
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.info_outline,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            formattedTime,
-                            style: TextStyle(
-                              fontSize: isTablet ? 13 : 11,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(width: 6),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                  ),
+                ),
+
+                // Content Section - Right Side
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: isTablet ? 12 : 10,
+                      right: isTablet ? 12 : 10,
+                      bottom: isTablet ? 12 : 10,
+                      left: 0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Disease name - Full width
+                        Text(
+                          prediction,
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 13,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        SizedBox(height: 8),
+
+                        // Badge and Confidence in one row
+                        Row(
+                          children: [
+                            if (confidence != null) ...[
+                              SizedBox(width: 12),
+                              Icon(Icons.analytics_outlined,
+                                  size: isTablet ? 14 : 12,
+                                  color: Colors.grey[600]),
+                              SizedBox(width: 4),
+                              Text(
+                                '${(confidence * 100).toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                  fontSize: isTablet ? 12 : 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: LinearProgressIndicator(
+                                    value: confidence,
+                                    backgroundColor: Colors.grey[200],
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        statusColor),
+                                    minHeight: isTablet ? 5 : 4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+
+                        SizedBox(height: 8),
+
+                        // Timestamp
+                        Row(
+                          children: [
+                            Icon(Icons.access_time,
+                                size: isTablet ? 14 : 12,
+                                color: Colors.grey[500]),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                formattedTime,
+                                style: TextStyle(
+                                  fontSize: isTablet ? 12 : 11,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right,
+                                size: 18, color: Colors.grey[400]),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDetailDialog(Map<String, dynamic> data, int index) {
+    final imageUrl = data['imageUrl'] ?? '';
+    final prediction = data['prediction'] ?? 'ไม่ทราบผล';
+    final confidence = data['confidence'] as double?;
+    final timestamp = (data['timestamp'] as Timestamp?)?.toDate();
+    final top3 = data['top3'] as List<dynamic>?;
+
+    final formattedTime = timestamp != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(timestamp)
+        : 'ไม่ทราบเวลา';
+
+    Color statusColor = Colors.green[600]!;
+    if (prediction.contains('โรค') || prediction.contains('เสีย')) {
+      statusColor = Colors.red[600]!;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 500,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ✅ Fixed Header (ไม่เลื่อน)
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [statusColor, statusColor.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.article, color: Colors.white, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        '#${index + 1}',
+                        'รายละเอียดการวิเคราะห์',
                         style: TextStyle(
-                          fontSize: 9,
+                          color: Colors.white,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
                         ),
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
                     ),
                   ],
                 ),
               ),
 
-              // Content
-              Flexible(
-                child: Padding(
-                  padding: EdgeInsets.all(isTablet ? 16 : 12),
-                  child: isDesktop
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Image
-                            Flexible(
-                              child: _buildImage(imageUrl, statusColor, index),
-                            ),
-                            SizedBox(height: 12),
-                            // Details
-                            _buildDetailsSection(
-                                confidence, statusColor, deviceInfo),
-                          ],
-                        )
-                      : IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Image
-                              _buildImage(imageUrl, statusColor, index,
-                                  size: isTablet ? 80 : 65),
-                              SizedBox(width: 12),
-                              // Details
-                              Expanded(
-                                child: _buildDetailsSection(
-                                    confidence, statusColor, deviceInfo),
+              // ✅ Scrollable Content (เลื่อนได้)
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Image
+                        if (imageUrl.isNotEmpty) ...[
+                          GestureDetector(
+                            onTap: () =>
+                                _showFullImage(imageUrl, prediction, index),
+                            child: Hero(
+                              tag: 'history_image_$index',
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  imageUrl,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.contain,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      height: 200,
+                                      color: Colors.grey[200],
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  statusColor),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      height: 200,
+                                      color: Colors.grey[200],
+                                      child: Center(
+                                        child: Icon(Icons.broken_image,
+                                            color: Colors.grey[400], size: 50),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ],
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                        ],
+
+                        // Prediction Result
+                        _buildInfoSection(
+                          icon: Icons.bug_report,
+                          title: 'ผลการวิเคราะห์',
+                          content: prediction,
+                          color: statusColor,
+                        ),
+                        SizedBox(height: 16),
+
+                        // Confidence Score
+                        if (confidence != null) ...[
+                          _buildInfoSection(
+                            icon: Icons.analytics,
+                            title: 'ความมั่นใจ',
+                            content:
+                                '${(confidence * 100).toStringAsFixed(1)}%',
+                            color: statusColor,
+                            trailing: LinearProgressIndicator(
+                              value: confidence,
+                              backgroundColor: Colors.grey[200],
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(statusColor),
+                              minHeight: 8,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                        ],
+
+                        // Top 3 Predictions
+                        if (top3 != null && top3.isNotEmpty) ...[
+                          Text(
+                            'โรคที่เป็นไปได้',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          ...top3.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final pred = entry.value;
+                            return Container(
+                              margin: EdgeInsets.only(bottom: 8),
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: idx == 0
+                                          ? statusColor
+                                          : Colors.grey[400],
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${idx + 1}',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          pred['class'] ?? '',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey[800],
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          pred['confidence'] ?? '',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          SizedBox(height: 16),
+                        ],
+
+                        // Timestamp
+                        _buildInfoSection(
+                          icon: Icons.schedule,
+                          title: 'วันที่วิเคราะห์',
+                          content: formattedTime,
+                          color: Colors.grey[700]!,
+                        ),
+                        SizedBox(height: 24),
+
+                        // Action Button
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => infopage(
+                                  diseaseName: prediction,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.info, size: 20),
+                          label: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              'ดูข้อมูลเพิ่มเติม',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: statusColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
                           ),
                         ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -501,136 +844,165 @@ class _HistoryPageState extends State<HistoryPage>
     );
   }
 
-  Widget _buildImage(String imageUrl, Color statusColor, int index,
-      {double? size}) {
-    return Hero(
-      tag: 'image_$index',
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: imageUrl.isNotEmpty
-              ? Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: Colors.grey[200],
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(statusColor),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: Icon(Icons.broken_image,
-                          color: Colors.grey[400], size: 24),
-                    );
-                  },
-                )
-              : Container(
-                  color: Colors.grey[200],
-                  child: Icon(Icons.image, color: Colors.grey[400], size: 24),
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailsSection(
-      double? confidence, Color statusColor, String deviceInfo) {
-    final isTablet = _isTablet(context);
-
+  Widget _buildInfoSection({
+    required IconData icon,
+    required String title,
+    required String content,
+    required Color color,
+    Widget? trailing,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
       children: [
-        if (confidence != null) ...[
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.analytics,
-                  size: isTablet ? 16 : 14, color: Colors.blue[600]),
-              SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  'ความแม่นยำ',
-                  style: TextStyle(
-                    fontSize: isTablet ? 13 : 11,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: LinearProgressIndicator(
-                  value: confidence,
-                  backgroundColor: Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                  minHeight: isTablet ? 7 : 5,
-                ),
-              ),
-              SizedBox(width: 6),
-              Text(
-                '${(confidence * 100).toStringAsFixed(0)}%',
-                style: TextStyle(
-                  fontSize: isTablet ? 13 : 11,
-                  fontWeight: FontWeight.bold,
-                  color: statusColor,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10),
-        ],
         Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.smartphone,
-                size: isTablet ? 14 : 12, color: Colors.grey[500]),
-            SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                deviceInfo,
-                style: TextStyle(
-                  fontSize: isTablet ? 12 : 10,
-                  color: Colors.grey[600],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            Icon(icon, size: 18, color: color),
+            SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
             ),
           ],
         ),
+        SizedBox(height: 8),
+        Container(
+          padding: EdgeInsets.all(12),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                content,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              if (trailing != null) ...[
+                SizedBox(height: 8),
+                trailing,
+              ],
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  void _showFullImage(String imageUrl, String prediction, int index) {
+    if (imageUrl.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.all(10),
+        child: Stack(
+          children: [
+            Center(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Hero(
+                  tag: 'history_image_$index',
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.9,
+                      maxWidth: MediaQuery.of(context).size.width * 0.95,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                strokeWidth: 3,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.broken_image,
+                                    color: Colors.white, size: 60),
+                                SizedBox(height: 8),
+                                Text(
+                                  'ไม่สามารถโหลดรูปภาพ',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -737,25 +1109,6 @@ class _HistoryPageState extends State<HistoryPage>
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureChip(String text) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.green[50],
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.green[200]!),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          color: Colors.green[700],
-          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -884,17 +1237,6 @@ class _HistoryPageState extends State<HistoryPage>
     );
   }
 
-  void _showStatistics() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('ฟีเจอร์สถิติจะเปิดใช้งานเร็วๆ นี้'),
-        backgroundColor: Colors.blue[600],
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   void _showClearHistoryDialog() {
     showDialog(
       context: context,
@@ -1018,56 +1360,5 @@ class _HistoryPageState extends State<HistoryPage>
         );
       }
     }
-  }
-
-  void _showExportDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.download, color: Colors.blue[600], size: 24),
-            SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                'ส่งออกข้อมูล',
-                style: TextStyle(fontSize: 18),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'คุณต้องการส่งออกประวัติการวิเคราะห์หรือไม่?',
-          style: TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('ยกเลิก'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('ฟีเจอร์ส่งออกข้อมูลจะเปิดใช้งานเร็วๆ นี้'),
-                  backgroundColor: Colors.blue[600],
-                  behavior: SnackBarBehavior.floating,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-            ),
-            child: Text('ส่งออก'),
-          ),
-        ],
-      ),
-    );
   }
 }

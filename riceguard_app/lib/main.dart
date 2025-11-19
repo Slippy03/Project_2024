@@ -12,6 +12,7 @@ import 'pages/PredictScreeen.dart';
 import 'pages/GoogleMapPage.dart';
 import 'pages/history.dart';
 import 'pages/info.dart';
+import 'pages/forumedit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,7 @@ class RiceGuardApp extends StatelessWidget {
       routes: {
         '/login': (context) => LoginPage(),
         '/info': (context) => infopage(),
+        '/forumedit': (context) => ForumEditPage(),
         '/home': (context) => HomePage(),
         '/forum': (context) => ForumPage(),
         '/camera': (context) => PredictScreeen(),

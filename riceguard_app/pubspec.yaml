@@ -81,8 +81,12 @@ flutter:
    - assets/images/virus.png
    - assets/images/user.png
    - assets/images/maps.png
+   - assets/images/bai_vong_brown.jpg
+   - assets/images/rice_blast.jpg
+   - assets/images/tungro.jpg        
+   - assets/images/sheath_blight.jpg
+   - assets/images/brown_spot.jpg
    
-  
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

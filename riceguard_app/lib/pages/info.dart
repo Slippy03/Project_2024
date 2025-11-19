@@ -1,8 +1,70 @@
 import 'package:flutter/material.dart';
 
+String _normalizeDisease(String s) {
+  var t = s.trim().toLowerCase();
+  t = t.replaceAll(RegExp(r'\(.*?\)'), ''); // ลบข้อความในวงเล็บ
+  t = t.replaceAll(RegExp(r'[\s\-_]'), ''); // ลบช่องว่าง/ขีด/ขีดล่าง
+  return t;
+}
+
+// อังกฤษ -> ชื่อไทยมาตรฐาน
+String? _aliasToCanonical(String norm) {
+  final aliases = <String, String>{
+    'brownspot': 'โรคใบจุดสีน้ำตาล',
+    'leafscald': 'โรคใบวงสีน้ำตาล',
+    'riceblast': 'โรคไหม้',
+    'tungro': 'โรคใบสีส้ม',
+    'sheathblight': 'โรคกาบใบแห้ง',
+  };
+  for (final e in aliases.entries) {
+    if (norm.contains(e.key)) return e.value;
+  }
+
+  // รองรับชื่อไทยด้วย
+  final thai = <String, String>{
+    'โรคใบจุดสีน้ำตาล': 'โรคใบจุดสีน้ำตาล',
+    'โรคใบวงสีน้ำตาล': 'โรคใบวงสีน้ำตาล',
+    'โรคไหม้': 'โรคไหม้',
+    'โรคใบสีส้ม': 'โรคใบสีส้ม',
+    'โรคกาบใบแห้ง': 'โรคกาบใบแห้ง',
+  };
+  for (final e in thai.entries) {
+    final k = _normalizeDisease(e.key);
+    if (norm.contains(k)) return e.value;
+  }
+  return null;
+}
+
+String _toCanonical(String s) {
+  final n = _normalizeDisease(s);
+  return _aliasToCanonical(n) ?? s.trim();
+}
+
 class infopage extends StatelessWidget {
+  final String? diseaseName; // ✅ รับชื่อโรคจาก history
+  const infopage({Key? key, this.diseaseName}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    // ✅ ถ้ามีชื่อโรค ให้หาในรายการแล้ว push ไปหน้า detail ทันที หลังเฟรมแรก
+    if (diseaseName != null && diseaseName!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final targetName = _toCanonical(diseaseName!);
+        final match = diseases.where(
+          (d) => _toCanonical(d.name) == targetName,
+        );
+        if (match.isNotEmpty) {
+          final target = match.first;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DiseaseDetailPage(disease: target),
+            ),
+          );
+        }
+      });
+    }
+
+    // แสดงหน้ารายการความรู้เป็นค่าเริ่มต้น
     return DiseaseListPage();
   }
 }
@@ -43,7 +105,7 @@ final List<Disease> diseases = [
   Disease(
     name: 'โรคใบวงสีน้ำตาล',
     englishName: 'Leaf Scald',
-    imageUrl: 'assets/leaf_scald.jpg',
+    imageUrl: 'assets/images/bai_vong_brown.jpg',
     found: 'พบในข้าวไร่ภาคเหนือและภาคใต้ และนาปีภาคตะวันออกเฉียงเหนือ',
     cause: 'เชื้อรา Rhynchosporium oryzae',
     symptoms:
@@ -61,7 +123,7 @@ final List<Disease> diseases = [
   Disease(
     name: 'โรคไหม้',
     englishName: 'Rice Blast',
-    imageUrl: 'assets/blast.jpg',
+    imageUrl: 'assets/images/rice_blast.jpg',
     found: 'พบในข้าวนาสวน นาปี นาปรัง และข้าวไร่ ทั่วทุกภาคของไทย',
     cause: 'เชื้อรา Pyricularia oryzae (Magnaporthe oryzae)',
     symptoms:
@@ -79,7 +141,7 @@ final List<Disease> diseases = [
   Disease(
     name: 'โรคใบสีส้ม',
     englishName: 'Rice Tungro Disease',
-    imageUrl: 'assets/tungro.jpg',
+    imageUrl: 'assets/images/tungro.jpg',
     found: 'พบมากในนาชลประทานภาคกลางและภาคเหนือตอนล่าง',
     cause:
         'ไวรัส RTBV (Rice tungro bacilliform virus) และ RTSV (Rice tungro spherical virus)',
@@ -98,7 +160,7 @@ final List<Disease> diseases = [
   Disease(
     name: 'โรคกาบใบแห้ง',
     englishName: 'Sheath Blight',
-    imageUrl: 'assets/sheath_blight.jpg',
+    imageUrl: 'assets/images/sheath_blight.jpg',
     found:
         'พบในนาชลประทานภาคกลาง ภาคเหนือ และภาคใต้ โดยเฉพาะในแปลงที่ข้าวแตกกอหนาแน่น',
     cause: 'เชื้อรา Rhizoctonia solani',
@@ -117,7 +179,7 @@ final List<Disease> diseases = [
   Disease(
     name: 'โรคใบจุดสีน้ำตาล',
     englishName: 'Brown Spot',
-    imageUrl: 'assets/brown_spot.jpg',
+    imageUrl: 'assets/images/brown_spot.jpg',
     found: 'พบทั่วไปในทุกภาคของไทย โดยเฉพาะในพื้นที่ที่มีการขาดแคลนธาตุอาหาร',
     cause: 'เชื้อรา Bipolaris oryzae (Cochliobolus miyabeanus)',
     symptoms:
@@ -153,7 +215,7 @@ class _DiseaseListPageState extends State<DiseaseListPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: Colors.green[600],
+        backgroundColor: Color(0xFF2E7D32),
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
@@ -168,7 +230,7 @@ class _DiseaseListPageState extends State<DiseaseListPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                Icons.menu_book, // หรือ Icons.library_books
+                Icons.menu_book,
                 color: Colors.white,
                 size: 24,
               ),
@@ -193,7 +255,7 @@ class _DiseaseListPageState extends State<DiseaseListPage> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.green[600],
+              color: Color(0xFF2E7D32),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(30),
                 bottomRight: Radius.circular(30),
@@ -220,8 +282,8 @@ class _DiseaseListPageState extends State<DiseaseListPage> {
                           selectedColor: Colors.white,
                           labelStyle: TextStyle(
                             color: selectedSeverity == severity
-                                ? Colors.green[600]
-                                : const Color.fromARGB(255, 75, 73, 73),
+                                ? Color(0xFF2E7D32)
+                                : Colors.white70,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -237,7 +299,7 @@ class _DiseaseListPageState extends State<DiseaseListPage> {
             padding: EdgeInsets.all(20),
             child: Row(
               children: [
-                Icon(Icons.eco, color: Colors.green[600]),
+                Icon(Icons.eco, color: Color(0xFF2E7D32)),
                 SizedBox(width: 10),
                 Text(
                   'พบ ${filteredDiseases.length} โรค',
@@ -361,16 +423,27 @@ class DiseaseDetailPage extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 250,
             pinned: true,
-            backgroundColor: Colors.green[600],
+            backgroundColor: Color(0xFF2E7D32),
+            iconTheme: IconThemeData(color: Colors.white), // ✅ เพิ่มบรรทัดนี้
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 disease.name,
-                style: TextStyle(fontWeight: FontWeight.bold, shadows: [
-                  Shadow(
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white, // ✅ เพิ่มสีขาว
+                  shadows: [
+                    Shadow(
+                      color: Colors.black87,
+                      blurRadius: 4,
+                      offset: Offset(1, 1),
+                    ),
+                    Shadow(
                       color: Colors.black54,
-                      blurRadius: 2,
-                      offset: Offset(1, 1))
-                ]),
+                      blurRadius: 8,
+                      offset: Offset(2, 2),
+                    ),
+                  ],
+                ),
               ),
               background: Container(
                 decoration: BoxDecoration(
